@@ -1,1 +1,7 @@
-print("hello world")
+print("hello work")
+
+
+def add(x):
+    print(x+2)
+
+    
