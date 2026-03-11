@@ -2,6 +2,6 @@ print("hello work")
 
 
 def add(x):
-    print(x+8)
+    print(x+100)
 
     
