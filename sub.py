@@ -1,2 +1,2 @@
 def sub(x):
-    print(x-6)
+    print(x-600)
