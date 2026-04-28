@@ -1,1 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DebateHub</title>
 
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header>
+  <nav>
+    <h1>DebateHub</h1>
+
+    <ul class="nav-links">
+      <li>Home</li>
+      <li>Search</li>
+      <li>Dashboard</li>
+      <li>Leaderboard</li>
+    </ul>
+
+    <button class="primary-btn">+ New Debate</button>
+  </nav>
+</header>
+
+<main>
+
+  <section class="filters">
+    <button class="active">All</button>
+    <button>Active</button>
+    <button>Ended</button>
+  </section>
+
+  <section class="debates">
+
+    <!-- Debate Card 1 -->
+    <article class="debate-card">
+      <p class="time">Ends in about 2 hours</p>
+      <h2>Pineapple belongs on pizza</h2>
+
+      <div class="votes">
+        <div class="agree">
+          <p>Agree</p>
+          <strong>342</strong>
+          <div>37.6%</div>
+        </div>
+
+        <div class="disagree">
+          <p>Disagree</p>
+          <strong>567</strong>
+          <div>62.4%</div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="agree-bar" style="width: 37.6%"></div>
+        <div class="disagree-bar" style="width: 62.4%"></div>
+      </div>
+
+      <p class="comments">2 comments</p>
+    </article>
+
+    <!-- Debate Card 2 -->
+    <article class="debate-card">
+      <p class="time">Ends in about 6 hours</p>
+      <h2>Remote work is better than office work</h2>
+
+      <div class="votes">
+        <div class="agree">
+          <p>Agree</p>
+          <strong>823</strong>
+          <div>64.9%</div>
+        </div>
+
+        <div class="disagree">
+          <p>Disagree</p>
+          <strong>445</strong>
+          <div>35.1%</div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="agree-bar" style="width: 64.9%"></div>
+        <div class="disagree-bar" style="width: 35.1%"></div>
+      </div>
+
+      <p class="comments">1 comment</p>
+    </article>
+
+  </section>
+
+</main>
+<script src="script.js"></script>
+</body>
+</html>
