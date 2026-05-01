@@ -1,0 +1,62 @@
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #eef2fb 0%, #dde4f5 100%);
+  min-height: 100vh;
+}
+
+.navbar {
+  background-color: #eef2fb;
+}
+
+.hero {
+  padding: 100px 0 60px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: #555;
+  max-width: 650px;
+  margin: 0 auto 30px;
+}
+
+.feature-card {
+  background: white;
+  border-radius: 16px;
+  padding: 40px 30px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 1.5rem;
+}
+
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+}
+
+.btn-dark {
+  background-color: #1a1a2e;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 600;
+}
+
+.btn-dark:hover {
+  background-color: #2d2d44;
+}
