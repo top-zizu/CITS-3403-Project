@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<head>
+  <title>Settings</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="main.js" defer></script>
+</head>
+
+<style>
+    main {
+      max-width: 600px;
+      margin: 40px auto 80px;
+      padding: 0 16px;
+    }
+
+    .page-header { margin-bottom: 24px; }
+
+    .page-header h1 {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 4px;
+    }
+
+    .page-header p { color: var(--muted); font-size: .875rem; }
+
+    /* ── Section Card ─────────────────────────────────────────── */
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .settings-card.danger {
+      border-color: #fecdd3;
+      background: #fff8f8;
+    }
+
+    .card-section-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Sora', sans-serif;
+      font-size: .875rem;
+      font-weight: 700;
+      color: var(--text);
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-card.danger .card-section-title {
+      color: #e11d48;
+      border-bottom-color: #fecdd3;
+    }
+
+    .card-section-title svg { width: 15px; height: 15px; }
+
+    .card-body { padding: 20px; }
+
+    /* ── Form Fields ─────────────────────────────────────────── */
+    .field { margin-bottom: 16px; }
+    .field:last-of-type { margin-bottom: 20px; }
+
+    .field label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="password"],
+    .field textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .field textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+
+    .field-hint {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    .field-hint.danger { color: #e11d48; }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 9px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-h); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover { background: var(--bg); }
+
+    .btn-danger {
+      background: #e11d48;
+      color: #fff;
+    }
+
+    .btn-danger:hover { background: #be123c; transform: translateY(-1px); }
+
+    /* ── Toggle Row ──────────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .toggle-row:first-child { padding-top: 0; }
+
+    .toggle-info strong {
+      display: block;
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .toggle-info span {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    /* Custom toggle switch */
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--accent);
+    }
+
+    .toggle-switch input:checked + .toggle-track::after {
+      transform: translateX(18px);
+    }
+
+    /* ── Danger section ──────────────────────────────────────── */
+    .danger-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .danger-info strong {
+      display: block;
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .danger-info span {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    /* ── Toast ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-size: .875rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 999;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Delete Modal ────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      transform: translateY(12px);
+      transition: transform .2s;
+    }
+
+    .modal-overlay.show .modal { transform: translateY(0); }
+
+    .modal h3 {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size: .875rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <div class="page-header">
+      <h1>Settings</h1>
+      <p>Manage your account preferences and privacy</p>
+    </div>
+
+    <!-- Profile Settings -->
+    <div class="settings-card">
+      <div class="card-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Profile Settings
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="username" value="DebateMaster" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" value="debate@example.com" />
+        </div>
+        <div class="field">
+          <label>Bio</label>
+          <textarea id="bio" maxlength="200">Passionate debater who loves discussing controversial topics.</textarea>
+          <div class="field-hint" id="bio-count">49/200 characters</div>
+        </div>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+      </div>
+    </div>
+
+    <!-- Privacy Settings -->
+    <div class="settings-card">
+      <div class="card-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Privacy Settings
+      </div>
+      <div class="card-body">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Hide My Opinions</strong>
+            <span>Hide your voting stance until debates end</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="hide-opinions" />
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Anonymous Mode</strong>
+            <span>Post comments and votes anonymously</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="anon-mode" />
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="settings-card">
+      <div class="card-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        Notifications
+      </div>
+      <div class="card-body">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Email Notifications</strong>
+            <span>Receive updates about debates you're following</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="email-notif" checked />
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Push Notifications</strong>
+            <span>Get notified when debates end or someone replies to your comment</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="push-notif" checked />
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="settings-card">
+      <div class="card-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Security
+      </div>
+      <div class="card-body">
+        <div id="change-password-wrap">
+          <button class="btn btn-outline" onclick="togglePasswordForm()">Change Password</button>
+        </div>
+        <div id="password-form" style="display:none; margin-top:16px;">
+          <div class="field">
+            <label>Current Password</label>
+            <input type="password" id="current-password" placeholder="Enter current password" />
+          </div>
+          <div class="field">
+            <label>New Password</label>
+            <input type="password" id="new-password" placeholder="Enter new password" />
+          </div>
+          <div class="field">
+            <label>Confirm New Password</label>
+            <input type="password" id="confirm-password" placeholder="Confirm new password" />
+          </div>
+          <div style="display:flex; gap:10px; margin-top:4px;">
+            <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
+            <button class="btn btn-outline" onclick="togglePasswordForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-card danger">
+      <div class="card-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+        Danger Zone
+      </div>
+      <div class="card-body">
+        <div class="danger-row">
+          <div class="danger-info">
+            <strong>Delete Account</strong>
+            <span>Once you delete your account, there is no going back. Please be certain.</span>
+          </div>
+          <button class="btn btn-danger" onclick="showDeleteModal()">Delete Account</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <h3>Delete Account</h3>
+      <p>Are you sure you want to permanently delete your account? All your debates, votes, and comments will be lost. This action cannot be undone.</p>
+      <div class="modal-btns">
+        <button class="btn btn-outline" onclick="hideDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* ── Bio character count ─────────────────────────────────── */
+    const bioEl = document.getElementById('bio');
+    const bioCount = document.getElementById('bio-count');
+
+    bioEl.addEventListener('input', () => {
+      bioCount.textContent = `${bioEl.value.length}/200 characters`;
+    });
+
+    /* ── Save Profile ────────────────────────────────────────── */
+    function saveProfile() {
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      if (!username || !email) {
+        showToast('⚠️ Username and email are required.');
+        return;
+      }
+      showToast('✅ Profile saved successfully!');
+    }
+
+    /* ── Password form toggle ────────────────────────────────── */
+    function togglePasswordForm() {
+      const form = document.getElementById('password-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function savePassword() {
+      const current = document.getElementById('current-password').value;
+      const next    = document.getElementById('new-password').value;
+      const confirm = document.getElementById('confirm-password').value;
+
+      if (!current || !next || !confirm) {
+        showToast('⚠️ Please fill in all password fields.');
+        return;
+      }
+      if (next !== confirm) {
+        showToast('⚠️ New passwords do not match.');
+        return;
+      }
+      if (next.length < 8) {
+        showToast('⚠️ Password must be at least 8 characters.');
+        return;
+      }
+      showToast('✅ Password updated successfully!');
+      togglePasswordForm();
+      document.getElementById('current-password').value = '';
+      document.getElementById('new-password').value = '';
+      document.getElementById('confirm-password').value = '';
+    }
+
+    /* ── Delete modal ────────────────────────────────────────── */
+    function showDeleteModal() {
+      document.getElementById('delete-modal').classList.add('show');
+    }
+
+    function hideDeleteModal() {
+      document.getElementById('delete-modal').classList.remove('show');
+    }
+
+    function confirmDelete() {
+      hideDeleteModal();
+      showToast('Account deleted. Redirecting...');
+      setTimeout(() => window.location.href = 'homepage.html', 2000);
+    }
+
+    // Close modal on overlay click
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+      if (e.target === this) hideDeleteModal();
+    });
+
+    /* ── Toast ───────────────────────────────────────────────── */
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+
+</body>
+</html>
