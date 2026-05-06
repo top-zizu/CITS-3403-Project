@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ debate.title }}</title>
+</head>
+<body>
+    <h1>{{ debate.title }}</h1>
+    <p>{{ debate.description }}</p>
+    <p>Category: {{ debate.category }}</p>
+
+    {% if vote_data.revealed %}
+        <p>Agree: {{ vote_data.agree_pct }}%</p>
+        <p>Disagree: {{ vote_data.disagree_pct }}%</p>
+        <p>Winner: {{ vote_data.winner }}</p>
+    {% else %}
+        <p>Total votes: {{ vote_data.total }} (results hidden while debate is live)</p>
+    {% endif %}
+
+    <h2>Comments</h2>
+    {% for comment in comments %}
+        <p><strong>{{ comment.author.username }}</strong>: {{ comment.content }}</p>
+    {% endfor %}
+</body>
+</html>
