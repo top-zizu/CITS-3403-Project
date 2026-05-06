@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from models import db, User, Debate
@@ -121,6 +121,57 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     debates = Debate.query.filter_by(user_id=user.id).order_by(Debate.created_at.desc()).all()
     return render_template("profile.html", user=user, debates=debates)
+
+@app.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        bio = request.form.get("bio", "").strip()
+
+        if username and username != current_user.username:
+            existing = User.query.filter_by(username=username).first()
+            if existing:
+                flash("Username already taken.", "danger")
+                return render_template("settings.html")
+            current_user.username = username
+
+        current_user.bio = bio
+        current_user.is_public = request.form.get("is_public") == "on"
+        current_user.notify_new_debates = request.form.get("notify_new_debates") == "on"
+        current_user.notify_comments = request.form.get("notify_comments") == "on"
+        current_user.notify_followed_accounts = request.form.get("notify_followed_accounts") == "on"
+
+        db.session.commit()
+        flash("Settings updated.", "success")
+        return redirect(url_for("settings"))
+
+    return render_template("settings.html")
+
+
+@app.route("/settings/password", methods=["POST"])
+@login_required
+def change_password():
+    current_password = request.form.get("current_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not current_user.check_password(current_password):
+        flash("Current password is incorrect.", "danger")
+        return redirect(url_for("settings"))
+
+    if len(new_password) < 8:
+        flash("New password must be at least 8 characters.", "danger")
+        return redirect(url_for("settings"))
+
+    if new_password != confirm_password:
+        flash("Passwords do not match.", "danger")
+        return redirect(url_for("settings"))
+
+    current_user.set_password(new_password)
+    db.session.commit()
+    flash("Password updated successfully.", "success")
+    return redirect(url_for("settings"))
 
 if __name__ == "__main__":
     app.run(debug=True)
