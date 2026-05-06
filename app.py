@@ -116,5 +116,11 @@ def leaderboard():
     users = User.query.order_by(User.reputation_score.desc()).all()
     return render_template("leaderboard.html", users=users)
 
+@app.route("/user/<username>")
+def profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    debates = Debate.query.filter_by(user_id=user.id).order_by(Debate.created_at.desc()).all()
+    return render_template("profile.html", user=user, debates=debates)
+
 if __name__ == "__main__":
     app.run(debug=True)
