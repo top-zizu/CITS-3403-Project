@@ -111,5 +111,10 @@ def forgot_password():
     return render_template("forgot_password.html", form=form)
 
 
+@app.route("/leaderboard")
+def leaderboard():
+    users = User.query.order_by(User.reputation_score.desc()).all()
+    return render_template("leaderboard.html", users=users)
+
 if __name__ == "__main__":
     app.run(debug=True)
