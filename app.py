@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
-from models import db, User
+from models import db, User, Debate
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
 
@@ -97,8 +97,8 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
-
+    debates = Debate.query.order_by(Debate.created_at.desc()).all()
+    return render_template("dashboard.html", debates=debates)
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
