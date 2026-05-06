@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<head>
+  <title>Search Debate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="main.js" defer></script>
+</head>
+
+<style>
+  main {
+    max-width: 680px;
+    margin: 40px auto 80px;
+    padding: 0 16px;
+  }
+
+  .page-header { margin-bottom: 24px; }
+
+  .page-header h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin-bottom: 6px;
+  }
+
+  .page-header p { color: var(--muted); font-size: .9375rem; }
+
+  /* ── Search ──────────────────────────────────────────────── */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9375rem;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .search-input::placeholder { color: #b0b7c3; }
+
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  /* ── Tag Filter ──────────────────────────────────────────── */
+  .filter-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .filter-label svg { width: 14px; height: 14px; }
+
+  .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+
+  .filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 999px;
+    font-size: .8125rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: var(--surface);
+    cursor: pointer;
+    user-select: none;
+    transition: all .15s;
+  }
+
+  .filter-tag svg { width: 12px; height: 12px; }
+
+  .filter-tag:hover { border-color: var(--accent); color: var(--accent); }
+
+  .filter-tag.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Section heading ─────────────────────────────────────── */
+  .section-heading { margin-bottom: 16px; }
+
+  .section-heading h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+
+  .section-heading p { font-size: .8125rem; color: var(--muted); }
+
+  /* ── Debate Card ─────────────────────────────────────────── */
+  .debate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 20px 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    transition: box-shadow .2s;
+  }
+
+  .debate-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+
+  .card-timer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .78rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .card-timer svg { width: 13px; height: 13px; }
+
+  .card-prompt {
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+
+  /* ── Vote Buttons ────────────────────────────────────────── */
+  .vote-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .vote-btn {
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1.5px solid;
+    cursor: pointer;
+    text-align: center;
+    transition: all .15s;
+    background: transparent;
+  }
+
+  .vote-btn.agree {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
+  .vote-btn.agree:hover:not(.voted) {
+    background: #dbeafe;
+    border-color: var(--accent);
+  }
+
+  .vote-btn.agree.voted {
+    background: #dbeafe;
+    border-color: var(--accent);
+  }
+
+  .vote-btn.disagree {
+    border-color: #fecdd3;
+    background: #fff1f2;
+  }
+
+  .vote-btn.disagree:hover:not(.voted) {
+    background: #ffe4e6;
+    border-color: #e11d48;
+  }
+
+  .vote-btn.disagree.voted {
+    background: #ffe4e6;
+    border-color: #e11d48;
+  }
+
+  .vote-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: .8125rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .vote-label svg { width: 15px; height: 15px; }
+
+  .vote-btn.agree .vote-label { color: var(--accent); }
+  .vote-btn.disagree .vote-label { color: #e11d48; }
+
+  .vote-count {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .vote-btn.agree .vote-count { color: var(--accent); }
+  .vote-btn.disagree .vote-count { color: #e11d48; }
+
+  .vote-pct { font-size: .78rem; color: var(--muted); }
+
+  /* ── Progress Bar ────────────────────────────────────────── */
+  .progress-track {
+    height: 4px;
+    border-radius: 999px;
+    background: #ef4444;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+
+  /* ── Card Footer ─────────────────────────────────────────── */
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .comment-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .8rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color .15s;
+  }
+
+  .comment-link:hover { color: var(--accent); }
+  .comment-link svg { width: 14px; height: 14px; }
+
+  .card-tags {
+    display: flex;
+    gap: 6px;
+  }
+
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .75rem;
+    color: var(--muted);
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+  }
+
+  .card-tag svg { width: 11px; height: 11px; }
+
+  /* ── Empty state ─────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
+    font-size: .9rem;
+    display: none;
+  }
+
+  /* ── Animations ──────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .debate-card { animation: fadeUp .3s ease both; }
+</style>
+</head>
+<body>
+
+<div id="nav-placeholder"></div>
+
+<main>
+  <div class="page-header">
+    <h1>Discover Debates</h1>
+    <p>Find debates based on your interests and follows</p>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input class="search-input" id="search-input" type="text" placeholder="Search debates..." />
+  </div>
+
+  <!-- Tag Filters -->
+  <div class="filter-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    </svg>
+    Filter by Tags
+  </div>
+  <div class="filter-tags" id="filter-tags"></div>
+
+  <!-- Recommended Section -->
+  <div class="section-heading">
+    <h2>Recommended for You</h2>
+    <p>Based on your interests in politics, technology, and work</p>
+  </div>
+
+  <div id="debates-list"></div>
+  <div class="empty-state" id="empty-state">No debates match your search or filters.</div>
+</main>
+
+<script>
+  /* ── Data ────────────────────────────────────────────────── */
+  const DEBATES = [
+    {
+      id: 1,
+      prompt: 'Universal basic income should be implemented globally',
+      timer: 'Ends in about 12 hours',
+      agree: 723, disagree: 556,
+      comments: 0,
+      tags: ['politics', 'economics'],
+      voted: null,
+    },
+    {
+      id: 2,
+      prompt: 'Artificial Intelligence will create more jobs than it destroys',
+      timer: 'Ends in about 18 hours',
+      agree: 445, disagree: 678,
+      comments: 0,
+      tags: ['technology', 'work'],
+      voted: null,
+    },
+    {
+      id: 3,
+      prompt: 'Climate change is the most pressing issue of our time',
+      timer: 'Ends in 1 day',
+      agree: 892, disagree: 234,
+      comments: 0,
+      tags: ['politics', 'environment'],
+      voted: null,
+    },
+    {
+      id: 4,
+      prompt: 'Social media does more harm than good for society',
+      timer: 'Ends in 2 days',
+      agree: 612, disagree: 389,
+      comments: 0,
+      tags: ['technology', 'lifestyle'],
+      voted: null,
+    },
+    {
+      id: 5,
+      prompt: 'Remote work is better than working in an office',
+      timer: 'Ends in 3 days',
+      agree: 801, disagree: 420,
+      comments: 0,
+      tags: ['work', 'lifestyle'],
+      voted: null,
+    },
+    {
+      id: 6,
+      prompt: 'Pineapple belongs on pizza',
+      timer: 'Ends in about 6 hours',
+      agree: 334, disagree: 891,
+      comments: 0,
+      tags: ['food'],
+      voted: null,
+    },
+  ];
+
+  const ALL_TAGS = ['politics', 'technology', 'lifestyle', 'food', 'work', 'animals', 'sports', 'entertainment'];
+  let activeFilters = new Set();
+  let searchQuery = '';
+
+  /* ── Render filter tags ──────────────────────────────────── */
+  const filterWrap = document.getElementById('filter-tags');
+  ALL_TAGS.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-tag';
+    btn.dataset.tag = tag;
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
+      ${tag}
+    `;
+    btn.addEventListener('click', () => toggleFilter(tag, btn));
+    filterWrap.appendChild(btn);
+  });
+
+  function toggleFilter(tag, btn) {
+    if (activeFilters.has(tag)) {
+      activeFilters.delete(tag);
+      btn.classList.remove('active');
+    } else {
+      activeFilters.add(tag);
+      btn.classList.add('active');
+    }
+    renderDebates();
+  }
+
+  /* ── Search ──────────────────────────────────────────────── */
+  document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value.toLowerCase();
+    renderDebates();
+  });
+
+  /* ── Render debates ──────────────────────────────────────── */
+  function getFiltered() {
+    return DEBATES.filter(d => {
+      const matchesSearch = !searchQuery || d.prompt.toLowerCase().includes(searchQuery);
+      const matchesTags = activeFilters.size === 0 || d.tags.some(t => activeFilters.has(t));
+      return matchesSearch && matchesTags;
+    });
+  }
+
+  function renderDebates() {
+    const list = document.getElementById('debates-list');
+    const empty = document.getElementById('empty-state');
+    const filtered = getFiltered();
+
+    list.innerHTML = '';
+
+    if (filtered.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+
+    filtered.forEach((debate, i) => {
+      const total = debate.agree + debate.disagree;
+      const agreePct = ((debate.agree / total) * 100).toFixed(1);
+      const disagreePct = (100 - agreePct).toFixed(1);
+
+      const card = document.createElement('div');
+      card.className = 'debate-card';
+      card.style.animationDelay = `${i * 60}ms`;
+
+      card.innerHTML = `
+        <div class="card-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          ${debate.timer}
+        </div>
+        <div class="card-prompt">${debate.prompt}</div>
+        <div class="vote-row">
+          <button class="vote-btn agree ${debate.voted === 'agree' ? 'voted' : ''}" onclick="vote(${debate.id}, 'agree')">
+            <div class="vote-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+              </svg>
+              Agree
+            </div>
+            <div class="vote-count" id="agree-count-${debate.id}">${debate.agree.toLocaleString()}</div>
+            <div class="vote-pct" id="agree-pct-${debate.id}">${agreePct}%</div>
+          </button>
+          <button class="vote-btn disagree ${debate.voted === 'disagree' ? 'voted' : ''}" onclick="vote(${debate.id}, 'disagree')">
+            <div class="vote-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+                <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+              </svg>
+              Disagree
+            </div>
+            <div class="vote-count" id="disagree-count-${debate.id}">${debate.disagree.toLocaleString()}</div>
+            <div class="vote-pct" id="disagree-pct-${debate.id}">${disagreePct}%</div>
+          </button>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-${debate.id}" style="width:${agreePct}%"></div>
+        </div>
+        <div class="card-footer">
+          <a href="debate-detail.html?id=${debate.id}" class="comment-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            ${debate.comments} Comments
+          </a>
+          <div class="card-tags">
+            ${debate.tags.map(t => `
+              <span class="card-tag">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                  <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                ${t}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      list.appendChild(card);
+    });
+  }
+
+  /* ── Voting ──────────────────────────────────────────────── */
+  function vote(id, side) {
+    const debate = DEBATES.find(d => d.id === id);
+    if (!debate) return;
+
+    // Toggle off if same vote
+    if (debate.voted === side) {
+      debate[side]--;
+      debate.voted = null;
+    } else {
+      // Remove previous vote
+      if (debate.voted) debate[debate.voted]--;
+      debate[side]++;
+      debate.voted = side;
+    }
+
+    // Update UI without full re-render
+    const total = debate.agree + debate.disagree;
+    const agreePct = ((debate.agree / total) * 100).toFixed(1);
+    const disagreePct = (100 - agreePct).toFixed(1);
+
+    document.getElementById(`agree-count-${id}`).textContent = debate.agree.toLocaleString();
+    document.getElementById(`disagree-count-${id}`).textContent = debate.disagree.toLocaleString();
+    document.getElementById(`agree-pct-${id}`).textContent = `${agreePct}%`;
+    document.getElementById(`disagree-pct-${id}`).textContent = `${disagreePct}%`;
+    document.getElementById(`progress-${id}`).style.width = `${agreePct}%`;
+
+    // Update button voted state
+    const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
+    card.querySelectorAll('.vote-btn').forEach(btn => btn.classList.remove('voted'));
+    if (debate.voted) {
+      card.querySelector(`.vote-btn.${debate.voted}`).classList.add('voted');
+    }
+  }
+
+  renderDebates();
+</script>
+
+</body>
+</html>
+
