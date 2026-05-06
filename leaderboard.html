@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<head>
+  <title>Leaderboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="main.js" defer></script>
+</head>
+
+<style>
+    /* ── Page Layout ─────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 48px auto 80px;
+      padding: 0 16px;
+    }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      color: var(--muted);
+      font-size: .9375rem;
+    }
+
+    /* ── Sort Tabs ───────────────────────────────────────────── */
+    .sort-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .sort-tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      transition: all .15s;
+    }
+
+    .sort-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .sort-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .sort-tab svg { width: 15px; height: 15px; }
+
+    /* ── Table Card ──────────────────────────────────────────── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 80px 1fr 120px 100px 140px 120px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .table-header span {
+      font-family: 'Sora', sans-serif;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* ── Row ─────────────────────────────────────────────────── */
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 120px 100px 140px 120px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      cursor: pointer;
+      transition: background .15s;
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .leaderboard-row:last-child { border-bottom: none; }
+
+    .leaderboard-row:hover {
+      background: var(--accent-lt);
+    }
+
+    .leaderboard-row.you {
+      background: #fafbff;
+    }
+
+    .leaderboard-row.you:hover {
+      background: var(--accent-lt);
+    }
+
+    /* ── Rank ────────────────────────────────────────────────── */
+    .rank-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rank-icon { font-size: 1.1rem; }
+
+    .rank-num {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: .9375rem;
+      color: var(--text);
+    }
+
+    /* ── User Cell ───────────────────────────────────────────── */
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Sora', sans-serif;
+      font-size: .875rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .user-info .username {
+      font-family: 'Sora', sans-serif;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .you-badge {
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-lt);
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .user-info .user-meta {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── Points Cell ─────────────────────────────────────────── */
+    .points-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: .9375rem;
+      color: var(--text);
+    }
+
+    .points-cell svg { color: #f59e0b; width: 16px; height: 16px; }
+
+    /* ── Debates Cell ────────────────────────────────────────── */
+    .debates-cell {
+      font-size: .9rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ── Badge Cell ──────────────────────────────────────────── */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+
+    .badge-conformist {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .badge-contrarian {
+      background: #fff1f2;
+      color: #e11d48;
+    }
+
+    .badge-moderate {
+      background: #f5f5f5;
+      color: #6b7280;
+    }
+
+    /* ── Conformity Bar ──────────────────────────────────────── */
+    .conformity-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .conformity-pct {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .conf-bar-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      width: 80px;
+    }
+
+    .conf-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(to right, #e11d48, #2563eb);
+    }
+
+    /* ── Hover tooltip ───────────────────────────────────────── */
+    .leaderboard-row::after {
+      content: 'View Profile →';
+      position: absolute;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity .15s;
+      pointer-events: none;
+    }
+
+    .leaderboard-row:hover::after {
+      opacity: 1;
+    }
+
+    /* ── Scoring Card ────────────────────────────────────────── */
+    .scoring-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-top: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .scoring-card h3 {
+      font-family: 'Sora', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .scoring-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .scoring-col h4 {
+      font-family: 'Sora', sans-serif;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 10px;
+    }
+
+    .scoring-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scoring-col ul li {
+      font-size: .875rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .scoring-col ul li::before {
+      content: '·';
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .scoring-col ul li span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Row enter animation ─────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .leaderboard-row {
+      animation: fadeUp .3s ease both;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <div class="page-header">
+      <h1>Leaderboard</h1>
+      <p>See how you rank among the community</p>
+    </div>
+
+    <!-- Sort Tabs -->
+    <div class="sort-tabs">
+      <button class="sort-tab active" data-sort="points" onclick="setSort('points', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          <polyline points="17 6 23 6 23 12"/>
+        </svg>
+        Participation Points
+      </button>
+      <button class="sort-tab" data-sort="distinctive" onclick="setSort('distinctive', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Most Distinctive
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <span>Rank</span>
+        <span>User</span>
+        <span>Points</span>
+        <span>Debates</span>
+        <span>Badge</span>
+        <span>Conformity</span>
+      </div>
+      <div id="leaderboard-body"></div>
+    </div>
+
+    <!-- Scoring Info -->
+    <div class="scoring-card">
+      <h3>How Scoring Works</h3>
+      <div class="scoring-grid">
+        <div class="scoring-col">
+          <h4>Participation Points</h4>
+          <ul>
+            <li>Voting on a debate: <span>+5 points</span></li>
+            <li>Commenting: <span>+10 points</span></li>
+            <li>Creating a debate: <span>+20 points</span></li>
+            <li>Receiving comment likes: <span>+2 points each</span></li>
+          </ul>
+        </div>
+        <div class="scoring-col">
+          <h4>Conformity Score</h4>
+          <ul>
+            <li><span>Conformist (60%+):</span> Usually votes with majority</li>
+            <li><span>Moderate (40–60%):</span> Balanced voting pattern</li>
+            <li><span>Contrarian (&lt;40%):</span> Often votes with minority</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const USERS = [
+      { id: 'argumentking',    name: 'ArgumentKing',    meta: '203 votes · 145 comments', points: 1523, debates: 67, badge: 'Contrarian',  conformity: 28,  color: '#f59e0b' },
+      { id: 'consensusbuilder',name: 'ConsensusBuilder',meta: '187 votes · 98 comments',  points: 1345, debates: 51, badge: 'Conformist',  conformity: 89,  color: '#6366f1' },
+      { id: 'debatemaster',    name: 'DebateMaster',    meta: '156 votes · 87 comments',  points: 1247, debates: 42, badge: 'Conformist',  conformity: 67,  color: '#2563eb', you: true },
+      { id: 'voiceofreason',   name: 'VoiceOfReason',   meta: '167 votes · 79 comments',  points: 1156, debates: 44, badge: 'Conformist',  conformity: 73,  color: '#10b981' },
+      { id: 'logicqueen',      name: 'LogicQueen',      meta: '142 votes · 65 comments',  points: 1089, debates: 38, badge: 'Moderate',    conformity: 52,  color: '#ec4899' },
+      { id: 'contrarymary',    name: 'ContraryMary',    meta: '128 votes · 72 comments',  points: 987,  debates: 35, badge: 'Contrarian',  conformity: 15,  color: '#ef4444' },
+      { id: 'mindchanger',     name: 'MindChanger',     meta: '115 votes · 54 comments',  points: 876,  debates: 29, badge: 'Moderate',    conformity: 45,  color: '#8b5cf6' },
+      { id: 'perspectiveseeker',name:'PerspectiveSeeker',meta: '98 votes · 43 comments',  points: 765,  debates: 26, badge: 'Moderate',    conformity: 51,  color: '#14b8a6' },
+    ];
+
+    let currentSort = 'points';
+
+    const RANK_ICONS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
+    function badgeClass(badge) {
+      if (badge === 'Conformist')  return 'badge-conformist';
+      if (badge === 'Contrarian')  return 'badge-contrarian';
+      return 'badge-moderate';
+    }
+
+    function badgeIcon(badge) {
+      if (badge === 'Conformist')  return '↗';
+      if (badge === 'Contrarian')  return '↙';
+      return '—';
+    }
+
+    function getSorted(sort) {
+      const copy = [...USERS];
+      if (sort === 'points') {
+        return copy.sort((a, b) => b.points - a.points);
+      } else {
+        // Most distinctive = lowest conformity (most contrarian)
+        return copy.sort((a, b) => a.conformity - b.conformity);
+      }
+    }
+
+    function renderLeaderboard(sort) {
+      const sorted = getSorted(sort);
+      const body = document.getElementById('leaderboard-body');
+      body.innerHTML = '';
+
+      sorted.forEach((user, i) => {
+        const rank = i + 1;
+        const row = document.createElement('a');
+        row.href = `user-profile.html?user=${user.id}`;
+        row.className = 'leaderboard-row' + (user.you ? ' you' : '');
+        row.style.animationDelay = `${i * 40}ms`;
+
+        row.innerHTML = `
+          <div class="rank-cell">
+            <span class="rank-icon">${RANK_ICONS[rank] || ''}</span>
+            <span class="rank-num">#${rank}</span>
+          </div>
+          <div class="user-cell">
+            <div class="avatar" style="background:${user.color}">${user.name[0]}</div>
+            <div class="user-info">
+              <div class="username">
+                ${user.name}
+                ${user.you ? '<span class="you-badge">You</span>' : ''}
+              </div>
+              <div class="user-meta">${user.meta}</div>
+            </div>
+          </div>
+          <div class="points-cell">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            ${user.points.toLocaleString()}
+          </div>
+          <div class="debates-cell">${user.debates}</div>
+          <div>
+            <span class="badge-pill ${badgeClass(user.badge)}">
+              ${badgeIcon(user.badge)} ${user.badge}
+            </span>
+          </div>
+          <div class="conformity-cell">
+            <span class="conformity-pct">${user.conformity}%</span>
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill" style="width:${user.conformity}%"></div>
+            </div>
+          </div>
+        `;
+
+        body.appendChild(row);
+      });
+    }
+
+    function setSort(sort, btn) {
+      currentSort = sort;
+      document.querySelectorAll('.sort-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderLeaderboard(sort);
+    }
+
+    renderLeaderboard('points');
+  </script>
+
+</body>
+</html>
+
