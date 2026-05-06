@@ -8,9 +8,7 @@ from debates import debates_bp
 
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = "dev-secret-key-change-later"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///debate_app.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config.from_object("config.Config")
 
 db.init_app(app)
 migrate = Migrate(app, db)
