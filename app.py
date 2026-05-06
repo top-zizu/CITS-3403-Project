@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, flash, request
+from datetime import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from models import db, User, Debate
@@ -172,6 +173,45 @@ def change_password():
     db.session.commit()
     flash("Password updated successfully.", "success")
     return redirect(url_for("settings"))
+
+@app.route("/search")
+def search():
+    query = request.args.get("q", "").strip()
+    category = request.args.get("category", "").strip()
+    status = request.args.get("status", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+
+    debates = Debate.query
+
+    if query:
+        debates = debates.filter(
+            (Debate.title.ilike(f"%{query}%")) |
+            (Debate.description.ilike(f"%{query}%"))
+        )
+
+    if category:
+        debates = debates.filter(Debate.category == category)
+
+    now = datetime.utcnow()
+    if status == "active":
+        debates = debates.filter(Debate.expires_at > now, Debate.is_closed == False)
+    elif status == "closed":
+        debates = debates.filter(
+            (Debate.expires_at <= now) | (Debate.is_closed == True)
+        )
+
+    if sort == "votes":
+        debates = debates.order_by(
+            (Debate.agree_votes + Debate.disagree_votes).desc()
+        )
+    elif sort == "ending":
+        debates = debates.filter(Debate.expires_at > now).order_by(Debate.expires_at.asc())
+    else:
+        debates = debates.order_by(Debate.created_at.desc())
+
+    debates = debates.all()
+
+    return render_template("searchdebates.html", debates=debates, query=query)
 
 if __name__ == "__main__":
     app.run(debug=True)
