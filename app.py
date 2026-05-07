@@ -210,6 +210,10 @@ def search():
     debates = debates.all()
 
     return render_template("searchdebates.html", debates=debates, query=query)
+    
+@app.route('/explore')
+def explore():
+    return render_template('explore.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
