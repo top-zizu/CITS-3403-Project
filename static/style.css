@@ -84,7 +84,7 @@ body {
 
 /* Navbar Styles */
 
-nav {
+#main-nav {
   position: sticky;
   top: 0;
   z-index: 100;
@@ -119,6 +119,7 @@ nav {
   gap: 4px;
   list-style: none;
   margin-right: 16px;
+  padding-top: 16px;
 }
 
 .nav-links a {
