@@ -13,6 +13,39 @@ from datetime import datetime, timezone, timedelta
 from models import db, Debate, Vote, Comment, CommentLike
 
 debates_bp = Blueprint('debates', __name__)
+def close_debate(debate):
+    """
+    Declares the winner of an expired debate and updates
+    reputation scores for all users who voted.
+    Only runs once — skipped if winner is already set.
+    """
+    if debate.winner is not None:
+        return  # Already closed, nothing to do
+
+    # --- Determine winner ---
+    if debate.agree_votes > debate.disagree_votes:
+        debate.winner = 'agree'
+    elif debate.disagree_votes > debate.agree_votes:
+        debate.winner = 'disagree'
+    else:
+        debate.winner = 'draw'
+
+    # --- Update stats for every user who voted ---
+    for vote in debate.votes:
+        voter = vote.user
+        if debate.winner == 'draw':
+            # Draw — no change to won/lost but small reputation gain for participating
+            voter.reputation_score += 1
+        elif vote.vote_type == debate.winner:
+            # Voted on the winning side
+            voter.debates_won += 1
+            voter.reputation_score += 10
+        else:
+            # Voted on the losing side
+            voter.debates_lost += 1
+            voter.reputation_score = max(0, voter.reputation_score - 5)
+
+    db.session.commit()
 
 
 # ============================================================
@@ -91,6 +124,7 @@ def view_debate(debate_id):
             'revealed': False,
         }
     else:
+        close_debate(debate)
         total = debate.total_votes
         if total == 0:
             vote_data = {
@@ -110,7 +144,6 @@ def view_debate(debate_id):
                 'disagree_pct': round((debate.disagree_votes / total) * 100, 1),
                 'winner':      debate.winner,
             }
-
     # --- Get top-level comments (replies load via comment.replies in template) ---
     top_level_comments = Comment.query.filter_by(
         debate_id=debate_id,
