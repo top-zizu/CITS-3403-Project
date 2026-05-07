@@ -124,35 +124,65 @@ function createDebateCard(debate) {
   card.dataset.id = debate.id;
 
   card.innerHTML = `
-    <div class="debate-meta">${debate.timer}</div>
+    <div class="card-timer">${debate.timer}</div>
 
-    <h3 class="debate-title">${debate.prompt}</h3>
+    <h3 class="card-prompt">${debate.prompt}</h3>
 
     <div class="vote-row">
-      <button class="vote-box agree-box ${debate.voted === 'agree' ? 'selected' : ''}" data-vote="agree">
-        <span class="vote-label">Agree</span>
-        <span class="vote-count">${debate.agree.toLocaleString()}</span>
-        <span class="vote-percent">${agreePercent}%</span>
+      <button class="vote-btn agree ${debate.voted === 'agree' ? 'voted' : ''}" data-vote="agree">
+        <div class="vote-label">Agree</div>
+        <div class="vote-count">${debate.agree.toLocaleString()}</div>
+        <div class="vote-pct">${agreePercent}%</div>
       </button>
 
-      <button class="vote-box disagree-box ${debate.voted === 'disagree' ? 'selected' : ''}" data-vote="disagree">
-        <span class="vote-label">Disagree</span>
-        <span class="vote-count">${debate.disagree.toLocaleString()}</span>
-        <span class="vote-percent">${disagreePercent}%</span>
+      <button class="vote-btn disagree ${debate.voted === 'disagree' ? 'voted' : ''}" data-vote="disagree">
+        <div class="vote-label">Disagree</div>
+        <div class="vote-count">${debate.disagree.toLocaleString()}</div>
+        <div class="vote-pct">${disagreePercent}%</div>
       </button>
     </div>
 
-    <div class="vote-progress">
-      <div class="agree-progress" style="width: ${agreePercent}%"></div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width: ${agreePercent}%"></div>
     </div>
 
-    <div class="debate-footer">
-      <button class="comments-toggle">
-        Comments <span class="comment-count">${debate.comments.length}</span>
+    <div class="card-footer">
+      <button class="comment-link comments-toggle">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+
+        <span class="comment-count">${debate.comments.length}</span>
+        <span>Comments</span>
       </button>
 
-      <div class="debate-tags">
-        ${debate.tags.map(tag => `<span class="debate-tag">${tag}</span>`).join('')}
+      <div class="card-tags">
+        ${debate.tags.map(tag => `
+          <span class="debate-tag">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+
+            ${tag}
+          </span>
+        `).join('')}
       </div>
     </div>
 
@@ -223,20 +253,25 @@ function handleCommentSubmit(form) {
 }
 
 document.addEventListener('click', event => {
-  const voteBox = event.target.closest('.vote-box');
+  const voteBtn = event.target.closest('.vote-btn');
   const commentsToggle = event.target.closest('.comments-toggle');
   const closePopup = event.target.closest('#close-popup');
   const popupBackground = event.target.id === 'login-popup';
 
-  if (voteBox) {
-    const card = voteBox.closest('.debate-card');
-    handleVote(card, voteBox.dataset.vote);
+  if (voteBtn) {
+    const card = voteBtn.closest('.debate-card');
+    handleVote(card, voteBtn.dataset.vote);
   }
 
   if (commentsToggle) {
-    const card = commentsToggle.closest('.debate-card');
-    card.querySelector('.comments-section').classList.toggle('hidden');
+    if (isGuest) {
+      showLoginPopup('You need to log in to comment on this debate.');
+      return;
   }
+
+  const card = commentsToggle.closest('.debate-card');
+  card.querySelector('.comments-section').classList.toggle('hidden');
+}
 
   if (closePopup || popupBackground) {
     closeLoginPopup();
