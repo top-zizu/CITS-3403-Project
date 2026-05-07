@@ -55,7 +55,7 @@ createBtn.addEventListener("click", () => {
 
       <section class="comments-section hidden">
         <div class="comment-form">
-          <input type="text" placeholder="Add a comment...">
+          <textarea maxlength="300" placeholder="Add a comment..."></textarea>
           <button class="post-btn">Post</button>
         </div>
       </section>
@@ -142,7 +142,7 @@ document.addEventListener("click", event => {
   if (!postBtn) return;
 
   const card = postBtn.closest(".debate-card");
-  const input = card.querySelector(".comment-form input");
+  const input = card.querySelector(".comment-form textarea");
 
   if (input.value.trim() === "") return;
 
