@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
           DebateHub
         </a>
         <ul class="nav-links">
-          <li><a href="homepage.html">Home</a></li>
-          <li><a href="searchdebates.html">Search</a></li>
-          <li><a href="dashboard.html">Dashboard</a></li>
-          <li><a href="leaderboard.html">Leaderboard</a></li>
+          <li><a href="/">Home</a></li>
+          <li><a href="/search">Search</a></li>
+          <li><a href="/dashboard">Dashboard</a></li>
+          <li><a href="/leaderboard">Leaderboard</a></li>
         </ul>
-        <button class="btn-new" onclick="window.location.href='create_debate.html'">+ New Debate</button>
+        <button class="btn-new" onclick="window.location.href='/debates/create'">+ New Debate</button>
         <div class="nav-user">
           <div class="nav-avatar">D</div>
           <span>DebateMaster</span>
