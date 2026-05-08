@@ -15,14 +15,57 @@ document.addEventListener('DOMContentLoaded', () => {
           <li><a href="/leaderboard">Leaderboard</a></li>
         </ul>
         <button class="btn-new" onclick="window.location.href='/debates/create'">+ New Debate</button>
-        <div class="nav-user">
+        <div class="nav-user" id="nav-user">
           <div class="nav-avatar">D</div>
           <span>DebateMaster</span>
+
+          <div class="user-menu hidden" id="user-menu">
+            <div class="user-menu-header">
+              <strong>DebateMaster</strong>
+              <small>Gold debater</small>
+            </div>
+
+            <a href="/profile">👤 Profile</a>
+            <a href="/dashboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7h18"></path>
+                <path d="M3 12h18"></path>
+                <path d="M3 17h18"></path>
+              </svg>
+
+              My Debates
+            </a>
+            <a href="#">⭐ Saved Debates</a>
+            <a href="#">🔔 Notifications</a>
+            <a href="/settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"></path>
+              </svg>
+
+              Settings
+            </a>
+            <button type="button">🌙 Dark Mode</button>
+            <a href="/logout">↩ Log Out</a>
+          </div>
         </div>
       </nav>
     `;
   
     document.getElementById('nav-placeholder').innerHTML = navbar;
+    const navUser = document.getElementById('nav-user');
+    const userMenu = document.getElementById('user-menu');
+
+    navUser.addEventListener('click', event => {
+      event.stopPropagation();
+      userMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', () => {
+      userMenu.classList.add('hidden');
+    });
   
     // Auto-highlight active link
     document.querySelectorAll('.nav-links a').forEach(link => {
