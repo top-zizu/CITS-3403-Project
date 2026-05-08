@@ -30,6 +30,11 @@
     rel="stylesheet"
     href="{{ url_for('static', filename='searchdebates.css') }}"
   >
+  
+  <link 
+    rel="stylesheet" 
+    href="{{ url_for('static', filename='style_searchdebates.css') }}"
+  >
 
   <script
     src="{{ url_for('static', filename='searchdebates.js') }}"
@@ -41,7 +46,7 @@
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg px-5 py-3">
-    <a class="navbar-brand fw-bold fs-4" href="{{ url_for('home') }}">
+    <a class="navbar-brand fw-bold fs-4" href="{{ url_for('homepage') }}">
       <span class="me-2">🔵</span> DebateHub
     </a>
 
