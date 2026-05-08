@@ -1,0 +1,228 @@
+main {
+    max-width: 860px;
+    margin: 32px auto 80px;
+    padding: 0 16px;
+  }
+
+  /* ── Profile Card ─────────────────────────────────────────── */
+  .profile-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+
+  /* Banner */
+  .profile-banner {
+    height: 140px;
+    background: linear-gradient(135deg, #2563eb 0%, #6d28d9 100%);
+    position: relative;
+  }
+
+  .edit-profile-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s, box-shadow .15s;
+  }
+
+  .edit-profile-btn:hover {
+    background: var(--bg);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+
+  .edit-profile-btn svg { width: 14px; height: 14px; color: var(--muted); }
+
+  /* Avatar */
+  .profile-avatar-wrap {
+    position: relative;
+    margin-top: -44px;
+    margin-left: 32px;
+    width: 88px;
+    height: 88px;
+  }
+
+  .profile-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 4px solid var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    box-shadow: 0 2px 12px rgba(0,0,0,.1);
+  }
+
+  /* Info */
+  .profile-info {
+    padding: 12px 32px 28px;
+  }
+
+  .profile-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+
+  .profile-joined {
+    font-size: .8375rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    background: var(--accent-lt);
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .profile-bio {
+    font-size: .9125rem;
+    color: var(--text);
+    line-height: 1.6;
+    max-width: 560px;
+    margin-bottom: 28px;
+  }
+
+  /* Stats */
+  .profile-stats {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+
+  .stat-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+
+  .stat-item + .stat-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    height: 80%;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .stat-value {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--text);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .stat-label {
+    font-size: .78rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* ── Activity Card ────────────────────────────────────────── */
+  .activity-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 28px 8px;
+    box-shadow: var(--shadow);
+  }
+
+  .activity-card h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  /* Activity Item */
+  .activity-item {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s;
+    border-radius: 8px;
+    padding-left: 8px;
+    margin: 0 -8px;
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+
+  .activity-item:hover { background: var(--accent-lt); }
+
+  .activity-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .activity-prompt {
+    font-family: 'Sora', sans-serif;
+    font-size: .9375rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .status-pill {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .status-active {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  .status-ended {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .activity-vote {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .activity-vote svg { width: 14px; height: 14px; }
+
+  .activity-vote.disagree { color: #e11d48; }
