@@ -1,11 +1,37 @@
 <!DOCTYPE html>
 <head>
-  <title>Search Debate</title>
+  <title>Saved Debates</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../static/style.css">
   <link rel="stylesheet" href="../static/style_searchdebates.css">
   <script src="../static/main.js" defer></script>
+  <style>
+    /* Star button */
+    .star-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      color: #d4a017;
+      transition: transform 0.15s ease, color 0.15s ease;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+    }
+    .star-btn svg {
+      width: 22px;
+      height: 22px;
+      filter: drop-shadow(0 1px 2px rgba(212,160,23,0.4));
+    }
+    .star-btn.saved { color: #f5b800; }
+    .star-btn:hover { transform: scale(1.2); color: #c89400; }
+    .debate-card { position: relative; }
+  </style>
 
 <body>
 
@@ -13,8 +39,8 @@
 
 <main>
   <div class="page-header">
-    <h1>Discover Debates</h1>
-    <p>Find debates based on your interests and follows</p>
+    <h1>Saved Debates</h1>
+    <p>Check in with the debates that have caught your attention!</p>
   </div>
 
   <!-- Search -->
@@ -34,12 +60,6 @@
   </div>
   <div class="filter-tags" id="filter-tags"></div>
 
-  <!-- Recommended Section -->
-  <div class="section-heading">
-    <h2>Recommended for You</h2>
-    <p>Based on your interests in politics, technology, and work</p>
-  </div>
-
   <div id="debates-list"></div>
   <div class="empty-state" id="empty-state">No debates match your search or filters.</div>
 </main>
@@ -55,7 +75,6 @@
       comments: 0,
       tags: ['politics', 'economics'],
       voted: null,
-      saved: false,
     },
     {
       id: 2,
@@ -65,7 +84,6 @@
       comments: 0,
       tags: ['technology', 'work'],
       voted: null,
-      saved: false,
     },
     {
       id: 3,
@@ -75,7 +93,6 @@
       comments: 0,
       tags: ['politics', 'environment'],
       voted: null,
-      saved: false,
     },
     {
       id: 4,
@@ -85,7 +102,6 @@
       comments: 0,
       tags: ['technology', 'lifestyle'],
       voted: null,
-      saved: false,
     },
     {
       id: 5,
@@ -95,7 +111,6 @@
       comments: 0,
       tags: ['work', 'lifestyle'],
       voted: null,
-      saved: false,
     },
     {
       id: 6,
@@ -105,7 +120,6 @@
       comments: 0,
       tags: ['food'],
       voted: null,
-      saved: false,
     },
   ];
 
@@ -180,8 +194,8 @@
       card.style.animationDelay = `${i * 60}ms`;
 
       card.innerHTML = `
-        <button class="star-btn ${debate.saved ? 'saved' : ''}" onclick="toggleSave(${debate.id})" title="${debate.saved ? 'Unsave' : 'Save debate'}">
-          <svg viewBox="0 0 24 24" fill="${debate.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <button class="star-btn saved" onclick="unsave(${debate.id})" title="Saved">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
           </svg>
         </button>
@@ -279,18 +293,12 @@
     }
   }
 
-  /* ── Save / Unsave ───────────────────────────────────────── */
-  function toggleSave(id) {
-    const debate = DEBATES.find(d => d.id === id);
-    if (!debate) return;
-    debate.saved = !debate.saved;
-
-    const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
-    const btn = card.querySelector('.star-btn');
-    const svg = btn.querySelector('svg');
-    btn.classList.toggle('saved', debate.saved);
-    svg.setAttribute('fill', debate.saved ? 'currentColor' : 'none');
-    btn.title = debate.saved ? 'Unsave' : 'Save debate';
+  /* ── Unsave ──────────────────────────────────────────────── */
+  function unsave(id) {
+    const idx = DEBATES.findIndex(d => d.id === id);
+    if (idx === -1) return;
+    DEBATES.splice(idx, 1);
+    renderDebates();
   }
 
   renderDebates();

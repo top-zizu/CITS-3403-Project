@@ -1,11 +1,80 @@
 <!DOCTYPE html>
 <head>
-  <title>Search Debate</title>
+  <title>My Debates</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../static/style.css">
   <link rel="stylesheet" href="../static/style_searchdebates.css">
   <script src="../static/main.js" defer></script>
+  <style>
+    /* Delete button */
+    .delete-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: #999;
+      transition: color 0.15s ease, background 0.15s ease;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .delete-btn svg { width: 16px; height: 16px; }
+    .delete-btn:hover { color: #e05252; background: rgba(224,82,82,0.08); }
+
+    /* Confirm delete state */
+    .delete-confirm {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+      display: none;
+    }
+    .delete-confirm.visible { display: flex; }
+    .delete-confirm-label {
+      font-size: 12px;
+      color: #e05252;
+      font-family: inherit;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .delete-confirm-yes {
+      background: #e05252;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .delete-confirm-yes:hover { background: #c03a3a; }
+    .delete-confirm-no {
+      background: none;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      color: #666;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .delete-confirm-no:hover { border-color: #999; color: #333; }
+    .debate-card { position: relative; }
+  </style>
 
 <body>
 
@@ -13,8 +82,8 @@
 
 <main>
   <div class="page-header">
-    <h1>Discover Debates</h1>
-    <p>Find debates based on your interests and follows</p>
+    <h1>Your Debates</h1>
+    <p>Check in with the debates you have created.</p>
   </div>
 
   <!-- Search -->
@@ -34,12 +103,6 @@
   </div>
   <div class="filter-tags" id="filter-tags"></div>
 
-  <!-- Recommended Section -->
-  <div class="section-heading">
-    <h2>Recommended for You</h2>
-    <p>Based on your interests in politics, technology, and work</p>
-  </div>
-
   <div id="debates-list"></div>
   <div class="empty-state" id="empty-state">No debates match your search or filters.</div>
 </main>
@@ -55,7 +118,6 @@
       comments: 0,
       tags: ['politics', 'economics'],
       voted: null,
-      saved: false,
     },
     {
       id: 2,
@@ -65,7 +127,6 @@
       comments: 0,
       tags: ['technology', 'work'],
       voted: null,
-      saved: false,
     },
     {
       id: 3,
@@ -75,7 +136,6 @@
       comments: 0,
       tags: ['politics', 'environment'],
       voted: null,
-      saved: false,
     },
     {
       id: 4,
@@ -85,7 +145,6 @@
       comments: 0,
       tags: ['technology', 'lifestyle'],
       voted: null,
-      saved: false,
     },
     {
       id: 5,
@@ -95,7 +154,6 @@
       comments: 0,
       tags: ['work', 'lifestyle'],
       voted: null,
-      saved: false,
     },
     {
       id: 6,
@@ -105,7 +163,6 @@
       comments: 0,
       tags: ['food'],
       voted: null,
-      saved: false,
     },
   ];
 
@@ -180,11 +237,17 @@
       card.style.animationDelay = `${i * 60}ms`;
 
       card.innerHTML = `
-        <button class="star-btn ${debate.saved ? 'saved' : ''}" onclick="toggleSave(${debate.id})" title="${debate.saved ? 'Unsave' : 'Save debate'}">
-          <svg viewBox="0 0 24 24" fill="${debate.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        <button class="delete-btn" onclick="askDelete(${debate.id})" title="Delete debate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
           </svg>
+          Delete
         </button>
+        <div class="delete-confirm" id="delete-confirm-${debate.id}">
+          <span class="delete-confirm-label">Are you sure?</span>
+          <button class="delete-confirm-yes" onclick="confirmDelete(${debate.id})">Delete</button>
+          <button class="delete-confirm-no" onclick="cancelDelete(${debate.id})">Cancel</button>
+        </div>
         <div class="card-timer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -279,18 +342,25 @@
     }
   }
 
-  /* ── Save / Unsave ───────────────────────────────────────── */
-  function toggleSave(id) {
-    const debate = DEBATES.find(d => d.id === id);
-    if (!debate) return;
-    debate.saved = !debate.saved;
+  /* ── Delete ──────────────────────────────────────────────── */
+  function askDelete(id) {
+    document.getElementById(`delete-confirm-${id}`).classList.add('visible');
+    // hide the delete button itself
+    const card = document.getElementById(`delete-confirm-${id}`).closest('.debate-card');
+    card.querySelector('.delete-btn').style.display = 'none';
+  }
 
-    const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
-    const btn = card.querySelector('.star-btn');
-    const svg = btn.querySelector('svg');
-    btn.classList.toggle('saved', debate.saved);
-    svg.setAttribute('fill', debate.saved ? 'currentColor' : 'none');
-    btn.title = debate.saved ? 'Unsave' : 'Save debate';
+  function cancelDelete(id) {
+    document.getElementById(`delete-confirm-${id}`).classList.remove('visible');
+    const card = document.getElementById(`delete-confirm-${id}`).closest('.debate-card');
+    card.querySelector('.delete-btn').style.display = '';
+  }
+
+  function confirmDelete(id) {
+    const idx = DEBATES.findIndex(d => d.id === id);
+    if (idx === -1) return;
+    DEBATES.splice(idx, 1);
+    renderDebates();
   }
 
   renderDebates();
