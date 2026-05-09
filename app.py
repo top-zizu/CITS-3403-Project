@@ -215,5 +215,9 @@ def search():
 def explore():
     return render_template('explore.html')
 
+@app.route("/user-profile")
+def user_profile():
+    return render_template("user-profile.html")
+
 if __name__ == "__main__":
     app.run(debug=True)
