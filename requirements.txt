@@ -3,6 +3,7 @@ flask-sqlalchemy
 flask-login
 flask-migrate
 flask-wtf
+python-dotenv
 werkzeug
 blinker==1.9.0
 click==8.3.3
