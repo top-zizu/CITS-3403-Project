@@ -381,3 +381,9 @@ body.dark-mode .user-menu-header {
 body.dark-mode .user-menu-header small {
   color: #9ca3af;
 }
+
+body.dark-mode .nav-links a:hover,
+body.dark-mode .nav-links a.active {
+  background: #2563eb;
+  color: #ffffff;
+}
