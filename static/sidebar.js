@@ -202,8 +202,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.querySelectorAll(".sidebar-link").forEach(link => {
-    if (link.pathname === window.location.pathname) {
+    const href = link.getAttribute("href");
+
+    if (href !== "#" && link.pathname === window.location.pathname) {
       link.classList.add("active");
-    }
-  });
+  }
+});
 });
