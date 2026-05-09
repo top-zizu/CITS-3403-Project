@@ -27,8 +27,8 @@
       <h1>Where Ideas Clash and<br>Minds Meet</h1>
       <p>Join the conversation on topics that matter. Create debate topics, share your perspective, and see where the community stands. Vote to agree or disagree, and discover diverse viewpoints from people around the world.</p>
       <div class="d-flex justify-content-center gap-3">
-        <a href="sign-up.html" class="btn btn-primary btn-lg px-5">Get Started</a>
-        <a href="#" class="btn btn-outline-secondary btn-lg px-4">Explore Debates</a>
+        <a href="{{ url_for('sign_up') }}" class="btn btn-primary btn-lg px-5 d-inline-flex align-items-center">Get Started</a>
+        <a href="{{ url_for('explore') }}" class="btn btn-outline-secondary btn-lg px-4">Explore Debates</a>
       </div>
     </div>
   </section>

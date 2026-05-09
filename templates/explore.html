@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Explore Debates - DebateHub</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='searchdebates.css') }}"
+  >
+  
+  <link 
+    rel="stylesheet" 
+    href="{{ url_for('static', filename='style_searchdebates.css') }}"
+  >
+
+  <script
+    src="{{ url_for('static', filename='searchdebates.js') }}"
+    defer
+  ></script>
+</head>
+
+<body data-guest="true">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg px-5 py-3">
+    <a class="navbar-brand fw-bold fs-4" href="{{ url_for('homepage') }}">
+      <span class="me-2">🔵</span> DebateHub
+    </a>
+
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <a
+        href="{{ url_for('login') }}"
+        class="text-primary fw-semibold text-decoration-none"
+      >
+        Log In
+      </a>
+
+      <a
+        href="{{ url_for('sign_up') }}"
+        class="btn btn-primary px-4"
+      >
+        Sign Up
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="search-page">
+
+    <!-- Header -->
+    <section class="search-header">
+      <h1>Explore Debates</h1>
+
+      <p>
+        Browse trending discussions and discover diverse perspectives from the community.
+      </p>
+    </section>
+
+    <!-- Search -->
+    <section class="search-controls">
+
+      <input
+        id="search-input"
+        class="search-input"
+        type="text"
+        placeholder="Search debates..."
+      >
+
+      <div class="filter-label">
+        Filter by Tags
+      </div>
+
+      <div id="filter-tags" class="filter-tags"></div>
+
+    </section>
+
+    <!-- Section -->
+    <section class="section-heading">
+      <h2>Trending Debates</h2>
+
+      <p>
+        Explore what the community is discussing right now.
+      </p>
+    </section>
+
+    <!-- Debate Cards -->
+    <section
+      id="debates-list"
+      class="debates"
+    ></section>
+
+    <!-- Empty State -->
+    <p
+      id="empty-state"
+      class="empty-state"
+    >
+      No debates match your search or filters.
+    </p>
+
+  </main>
+
+  <!-- Login Popup -->
+  <div id="login-popup" class="login-popup hidden">
+
+    <div class="login-popup-card">
+
+      <h3>Login Required</h3>
+
+      <p id="login-popup-message">
+        You need to log in to interact with debates.
+      </p>
+
+      <div class="popup-actions">
+
+        <a
+          href="{{ url_for('login') }}"
+          class="btn btn-primary"
+        >
+          Log In
+        </a>
+
+        <a
+          href="{{ url_for('sign_up') }}"
+          class="btn btn-outline-secondary"
+        >
+          Sign Up
+        </a>
+
+      </div>
+
+      <button
+        id="close-popup"
+        class="btn btn-light mt-3"
+      >
+        Close
+      </button>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
