@@ -170,3 +170,37 @@ body.dark-mode .notification-time,
 body.dark-mode .notifications-header p {
   color: #9ca3af;
 }
+
+.notification-row {
+  cursor: pointer;
+}
+
+.notification-row.expanded {
+  background: var(--accent-lt);
+}
+
+.notification-expanded {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.notification-expanded p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+body.dark-mode .notification-row.expanded {
+  background: #1f2937;
+}
+
+body.dark-mode .notification-expanded {
+  background: #0f172a;
+  border: 1px solid #374151;
+}
+
+body.dark-mode .notification-expanded p {
+  color: #e5e7eb;
+}
