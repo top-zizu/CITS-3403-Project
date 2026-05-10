@@ -110,6 +110,11 @@ class Debate(db.Model):
     def is_active(self):
         return datetime.now(timezone.utc) < self.expires_at and not self.is_closed
 
+    @property
+    def display_author(self):
+        """Returns 'Anonymous' if the debate is anonymous, otherwise the author's username."""
+        return 'Anonymous' if self.is_anonymous else self.author.username
+
 
 # -------------------------
 # PRIVATE DEBATE ACCESS
