@@ -1,0 +1,170 @@
+.friends-main {
+  padding: 36px 28px 80px;
+}
+
+.friends-header,
+.friends-tabs,
+.friends-card {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.friends-header {
+  margin-bottom: 24px;
+}
+
+.friends-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.friends-header p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.friends-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.friends-tab {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.friends-tab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.friends-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.friend-row:last-child {
+  border-bottom: none;
+}
+
+.friend-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.friend-info {
+  flex: 1;
+}
+
+.friend-info h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.friend-info p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.friend-status {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.friend-status.online {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.friend-status.offline {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn,
+.decline-btn {
+  border: none;
+  padding: 8px 13px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accept-btn {
+  background: var(--accent);
+  color: white;
+}
+
+.decline-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.empty-state {
+  padding: 24px;
+  color: var(--muted);
+}
+
+/* Dark mode */
+
+body.dark-mode .friends-card,
+body.dark-mode .friends-tab {
+  background: #111827;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+body.dark-mode .friends-tab.active {
+  background: #2563eb;
+  color: white;
+}
+
+body.dark-mode .friend-row {
+  border-bottom-color: #374151;
+}
+
+body.dark-mode .friend-info p,
+body.dark-mode .friends-header p {
+  color: #9ca3af;
+}
+
+body.dark-mode .decline-btn {
+  background: #1f2937;
+  color: #e5e7eb;
+}

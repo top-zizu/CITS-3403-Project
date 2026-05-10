@@ -225,5 +225,9 @@ def user_profile():
 def home():
     return render_template("home.html")
 
+@app.route("/friends")
+def friends():
+    return render_template("friends.html")
+
 if __name__ == "__main__":
     app.run(debug=True)

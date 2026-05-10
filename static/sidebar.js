@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="sidebar-section">
 
-        <a href="#" class="sidebar-link">
+        <a href="/friends?tab=friends" class="sidebar-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>Friends</span>
         </a>
 
-        <a href="#" class="sidebar-link">
+        <a href="/friends?tab=requests" class="sidebar-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
