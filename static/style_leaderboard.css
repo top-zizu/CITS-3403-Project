@@ -183,6 +183,7 @@ main {
     font-weight: 700;
     font-size: .9375rem;
     color: var(--text);
+    padding-right: 32px
     }
 
     .points-cell svg { color: #f59e0b; width: 16px; height: 16px; }
@@ -192,6 +193,8 @@ main {
     font-size: .9rem;
     font-weight: 500;
     color: var(--text);
+    text-align: center;
+    padding-right: 48px
     }
 
     /* ── Badge Cell ──────────────────────────────────────────── */
@@ -225,6 +228,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    padding-right: 32px;
     }
 
     .conformity-pct {
@@ -245,21 +249,6 @@ main {
     height: 100%;
     border-radius: 999px;
     background: linear-gradient(to right, #e11d48, #2563eb);
-    }
-
-    /* ── Hover tooltip ───────────────────────────────────────── */
-    .leaderboard-row::after {
-    content: 'View Profile →';
-    position: absolute;
-    right: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: .78rem;
-    font-weight: 600;
-    color: var(--accent);
-    opacity: 0;
-    transition: opacity .15s;
-    pointer-events: none;
     }
 
     .leaderboard-row:hover::after {
