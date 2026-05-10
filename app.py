@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request
 from datetime import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from models import db, User, Debate
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
@@ -12,6 +13,7 @@ app.config.from_object("config.Config")
 
 db.init_app(app)
 migrate = Migrate(app, db)
+csrf = CSRFProtect(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -25,8 +27,8 @@ def load_user(user_id):
 # Register blueprints
 app.register_blueprint(debates_bp)
 
-with app.app_context():
-    db.create_all()
+# Database tables are managed by Flask-Migrate.
+# Run `flask db upgrade` after cloning to create the schema.
 
 @app.route("/")
 def homepage():
