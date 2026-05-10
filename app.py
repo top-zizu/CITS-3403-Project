@@ -244,5 +244,9 @@ def my_debates():
     debates = Debate.query.filter_by(user_id=current_user.id).order_by(Debate.created_at.desc()).all()
     return render_template("my_debates.html", debates=debates)
 
+@app.route("/debate/<int:debate_id>")
+def debate_detail(debate_id):
+    return render_template("debate_detail.html")
+
 if __name__ == "__main__":
     app.run(debug=True)

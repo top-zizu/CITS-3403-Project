@@ -142,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const filter = button.dataset.filter || button.textContent.trim().toLowerCase();
         renderDebates(filter);
       });
-    });
-  
+    });  
     renderDebates("all");
   });

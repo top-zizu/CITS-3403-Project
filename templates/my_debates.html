@@ -286,7 +286,7 @@
           <div class="progress-fill" id="progress-${debate.id}" style="width:${agreePct}%"></div>
         </div>
         <div class="card-footer">
-          <a href="debate-detail.html?id=${debate.id}" class="comment-link">
+          <a href="/debate/${debate.id}" class="comment-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
@@ -307,6 +307,13 @@
       `;
 
       list.appendChild(card);
+      
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e) => {
+          if (!e.target.closest('button') && !e.target.closest('a')) {
+              window.location.href = `/debate/${debate.id}`;
+          }
+      });
     });
   }
 

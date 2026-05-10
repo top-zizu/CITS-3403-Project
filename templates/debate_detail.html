@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debate Detail</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_debate_detail.css') }}">
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+</head>
+<body>
+
+<div id="nav-placeholder"></div>
+<div id="sidebar-placeholder"></div>
+
+<main>
+  <a href="/dashboard" class="back-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 5l-7 7 7 7"/>
+    </svg>
+    Back to debates
+  </a>
+
+  <!-- Debate Card -->
+  <div class="debate-card">
+    <div class="debate-meta-row">
+      <span class="status-badge status-ended">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Debate Ended
+      </span>
+      <span class="winner-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 21h8M12 17v4M7 4h10M17 4v4a5 5 0 0 1-10 0V4"/>
+        </svg>
+        Red Wins!
+      </span>
+      <div class="debate-actions">
+        <button class="icon-btn" title="Share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="Report">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <h1 class="debate-title">Pineapple belongs on pizza</h1>
+    <div class="debate-creator">
+      Created by <a href="/user/FoodDebater" class="creator-link">FoodDebater</a> &bull; 1 day ago
+    </div>
+    <div class="debate-tags">
+      <span class="tag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        food
+      </span>
+      <span class="tag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        lifestyle
+      </span>
+    </div>
+
+    <div class="vote-panels">
+      <div class="vote-panel agree" id="agree-panel" onclick="castVote('agree')">
+        <div class="vote-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+          </svg>
+          Agree
+        </div>
+        <span class="vote-count" id="agree-count">342</span>
+        <span class="vote-pct" id="agree-pct">37.6%</span>
+      </div>
+      <div class="vote-panel disagree" id="disagree-panel" onclick="castVote('disagree')">
+        <div class="vote-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+            <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+          </svg>
+          Disagree
+        </div>
+        <span class="vote-count" id="disagree-count">567</span>
+        <span class="vote-pct" id="disagree-pct">62.4%</span>
+      </div>
+    </div>
+
+    <div class="progress-track">
+      <div class="progress-blue" id="progress-blue" style="width: 37.6%"></div>
+      <div class="progress-red"></div>
+    </div>
+  </div>
+
+  <!-- Comments Card -->
+  <div class="comments-card">
+    <div class="comments-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      Comments (<span id="comment-count">3</span>)
+    </div>
+
+    <div class="stance-tabs">
+      <button class="stance-tab blue active" onclick="setStance('blue', this)">Blue (Agree)</button>
+      <button class="stance-tab red"         onclick="setStance('red', this)">Red (Disagree)</button>
+      <button class="stance-tab neutral"     onclick="setStance('neutral', this)">Neutral</button>
+    </div>
+
+    <div class="comment-input-row">
+      <input class="comment-input" id="comment-input" type="text" placeholder="Add your argument...">
+      <button class="post-btn" onclick="postComment()">Post</button>
+    </div>
+
+    <div id="comments-list"></div>
+  </div>
+</main>
+
+<script>
+  /* ── State ── */
+  let stance = 'blue';
+  let voted = null;
+  let agree = 342, disagree = 567;
+
+  const INITIAL_COMMENTS = [
+    { id: 1, author: 'FoodLover23', stance: 'blue', time: 'about 4 hours ago', text: 'The sweet and savory combination is amazing! Don\'t knock it until you try it.', likes: 12, liked: false, replies: [
+      { id: 101, author: 'ItalianPurist', stance: 'red', time: 'about 4 hours ago', text: 'Have you even tried authentic Italian pizza? This ruins the traditional flavors.', likes: 8, liked: false }
+    ]},
+    { id: 2, author: 'ItalianPurist', stance: 'red', time: 'about 4 hours ago', text: 'This is an abomination to pizza culture. Stick to the classics!', likes: 15, liked: false, replies: [] },
+    { id: 3, author: 'NeutralObserver', stance: 'neutral', time: 'about 4 hours ago', text: 'I think people should eat whatever they enjoy. Why does it matter so much?', likes: 20, liked: false, replies: [] },
+  ];
+
+  let comments = JSON.parse(JSON.stringify(INITIAL_COMMENTS));
+  let nextId = 10;
+
+  /* ── Stance ── */
+  function setStance(s, btn) {
+    stance = s;
+    document.querySelectorAll('.stance-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  /* ── Vote ── */
+  function castVote(side) {
+    if (voted === side) {
+      side === 'agree' ? agree-- : disagree--;
+      voted = null;
+    } else {
+      if (voted) voted === 'agree' ? agree-- : disagree--;
+      side === 'agree' ? agree++ : disagree++;
+      voted = side;
+    }
+    updateVoteUI();
+  }
+
+  function updateVoteUI() {
+    const total = agree + disagree;
+    const ap = ((agree / total) * 100).toFixed(1);
+    const dp = (100 - ap).toFixed(1);
+    document.getElementById('agree-count').textContent = agree.toLocaleString();
+    document.getElementById('disagree-count').textContent = disagree.toLocaleString();
+    document.getElementById('agree-pct').textContent = ap + '%';
+    document.getElementById('disagree-pct').textContent = dp + '%';
+    document.getElementById('progress-blue').style.width = ap + '%';
+    document.getElementById('agree-panel').classList.toggle('voted', voted === 'agree');
+    document.getElementById('disagree-panel').classList.toggle('voted', voted === 'disagree');
+  }
+
+  /* ── Post Comment ── */
+  function postComment() {
+    const input = document.getElementById('comment-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const comment = { id: nextId++, author: 'You', stance, time: 'just now', text, likes: 0, liked: false, replies: [] };
+    comments.unshift(comment);
+    input.value = '';
+    renderComments();
+  }
+
+  /* ── Post Reply ── */
+  function postReply(commentId) {
+    const input = document.getElementById('reply-input-' + commentId);
+    const text = input.value.trim();
+    if (!text) return;
+    const comment = comments.find(c => c.id === commentId);
+    if (!comment) return;
+    comment.replies.push({ id: nextId++, author: 'You', stance, time: 'just now', text, likes: 0, liked: false });
+    input.value = '';
+    renderComments();
+  }
+
+  /* ── Toggle Reply Box ── */
+  function toggleReply(commentId) {
+    const wrap = document.getElementById('reply-wrap-' + commentId);
+    wrap.classList.toggle('open');
+    if (wrap.classList.contains('open')) {
+      document.getElementById('reply-input-' + commentId).focus();
+    }
+  }
+
+  /* ── Like ── */
+  function toggleLike(id, isReply, parentId) {
+    let item;
+    if (isReply) {
+      const parent = comments.find(c => c.id === parentId);
+      item = parent?.replies.find(r => r.id === id);
+    } else {
+      item = comments.find(c => c.id === id);
+    }
+    if (!item) return;
+    item.liked = !item.liked;
+    item.likes += item.liked ? 1 : -1;
+    renderComments();
+  }
+
+  /* ── Render ── */
+  function stanceLabel(s) {
+    if (s === 'blue') return 'Agree';
+    if (s === 'red') return 'Disagree';
+    return 'Neutral';
+  }
+
+  function buildComment(c, isReply = false, parentId = null) {
+    return `
+      <div class="comment ${c.stance}" id="comment-${c.id}">
+        <div class="comment-header">
+          <a href="/user/${c.author}" class="comment-author">${c.author}</a>
+          <span class="stance-pill ${c.stance}">${stanceLabel(c.stance)}</span>
+          <span class="comment-time">
+            ${c.time}
+            <button class="like-btn ${c.liked ? 'liked' : ''}" onclick="toggleLike(${c.id}, ${isReply}, ${parentId})">
+              <svg viewBox="0 0 24 24" fill="${c.liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+              </svg>
+              ${c.likes}
+            </button>
+          </span>
+        </div>
+        <div class="comment-body">${c.text}</div>
+        ${!isReply ? `<button class="reply-btn" onclick="toggleReply(${c.id})">Reply</button>` : ''}
+        ${!isReply ? `
+          <div class="reply-input-wrap" id="reply-wrap-${c.id}">
+            <input class="reply-input" id="reply-input-${c.id}" type="text" placeholder="Write a reply...">
+            <button class="reply-post-btn" onclick="postReply(${c.id})">Reply</button>
+          </div>
+          <div class="replies">
+            ${c.replies.map(r => buildComment(r, true, c.id)).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  function renderComments() {
+    const list = document.getElementById('comments-list');
+    list.innerHTML = comments.map(c => buildComment(c)).join('');
+    document.getElementById('comment-count').textContent = comments.length;
+  }
+
+  renderComments();
+</script>
+
+</body>
+</html>
