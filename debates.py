@@ -15,7 +15,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone, timedelta
-from models import db, Debate, Vote, Comment, CommentLike
+from models import db, Debate, Vote, Comment, CommentLike, Bookmark
 
 debates_bp = Blueprint('debates', __name__)
 
@@ -183,19 +183,25 @@ def view_debate(debate_id):
         parent_comment_id = None
     ).order_by(Comment.created_at.asc()).all()
 
-    user_vote = None
+    user_vote     = None
+    user_bookmark = None
     if current_user.is_authenticated:
         user_vote = Vote.query.filter_by(
+            user_id   = current_user.id,
+            debate_id = debate_id
+        ).first()
+        user_bookmark = Bookmark.query.filter_by(
             user_id   = current_user.id,
             debate_id = debate_id
         ).first()
 
     return render_template(
         'debate.html',
-        debate    = debate,
-        vote_data = vote_data,
-        comments  = top_level_comments,
-        user_vote = user_vote,
+        debate        = debate,
+        vote_data     = vote_data,
+        comments      = top_level_comments,
+        user_vote     = user_vote,
+        user_bookmark = user_bookmark,
     )
 
 
@@ -372,3 +378,54 @@ def like_comment(comment_id):
         'success':    True,
         'like_count': len(comment.likes),
     })
+
+    # ============================================================
+# BOOKMARKS
+# ============================================================
+
+@debates_bp.route('/debates/<int:debate_id>/bookmark', methods=['POST'])
+@login_required
+def toggle_bookmark(debate_id):
+    """
+    Toggles a bookmark for the current user on a debate.
+    Returns JSON with the new bookmarked state.
+    """
+    db.get_or_404(Debate, debate_id)
+
+    existing = Bookmark.query.filter_by(
+        user_id   = current_user.id,
+        debate_id = debate_id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'success': True, 'bookmarked': False})
+
+    bookmark = Bookmark(user_id=current_user.id, debate_id=debate_id)
+    db.session.add(bookmark)
+    db.session.commit()
+    return jsonify({'success': True, 'bookmarked': True})
+
+
+# ============================================================
+# DELETE DEBATE
+# ============================================================
+
+@debates_bp.route('/debates/<int:debate_id>/delete', methods=['POST'])
+@login_required
+def delete_debate(debate_id):
+    """
+    Permanently deletes a debate and all related data (votes, comments, bookmarks).
+    Only the debate's author can delete it.
+    Returns JSON.
+    """
+    debate = db.get_or_404(Debate, debate_id)
+
+    if debate.user_id != current_user.id:
+        return jsonify({'error': 'You can only delete your own debates.'}), 403
+
+    db.session.delete(debate)
+    db.session.commit()
+
+    return jsonify({'success': True})

@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
-from models import db, User, Debate, Vote, Comment
+from models import db, User, Debate, Vote, Comment, Bookmark
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
 
@@ -228,7 +228,7 @@ def search():
     if category:
         debates = debates.filter(Debate.category == category)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if status == "active":
         debates = debates.filter(Debate.expires_at > now, Debate.is_closed == False)
     elif status == "closed":
@@ -267,6 +267,28 @@ def notifications():
 @app.route("/friends")
 def friends():
     return render_template("friends.html")
+
+
+@app.route('/saved-debates')
+@login_required
+def saved_debates():
+    """Lists debates the current user has bookmarked, newest bookmark first."""
+    bookmarks = Bookmark.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Bookmark.created_at.desc()).all()
+    debates = [b.debate for b in bookmarks]
+    return render_template('saved_debates.html', debates=debates)
+
+
+@app.route('/my-debates')
+@login_required
+def my_debates():
+    """Lists all debates created by the current user, newest first."""
+    debates = Debate.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Debate.created_at.desc()).all()
+    return render_template('my_debates.html', debates=debates)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
