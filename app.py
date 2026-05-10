@@ -1,9 +1,9 @@
 from flask import Flask, render_template, redirect, url_for, flash, request
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
-from models import db, User, Debate
+from models import db, User, Debate, Vote, Comment
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
 
@@ -114,8 +114,44 @@ def forgot_password():
 
 @app.route("/leaderboard")
 def leaderboard():
-    users = User.query.order_by(User.reputation_score.desc()).all()
-    return render_template("leaderboard.html", users=users)
+    """
+    Leaderboard with sort and time filter options.
+    sort:   most_active (default) | most_distinctive | most_wins
+    period: all_time (default)   | this_week        | this_month
+    Conformity badge thresholds: Conformist >= 0.6, Contrarian < 0.4
+    """
+    sort   = request.args.get('sort', 'most_active')
+    period = request.args.get('period', 'all_time')
+
+    now   = datetime.now(timezone.utc)
+    query = User.query
+
+    # Filter to users who were active in the selected period
+    if period in ('this_week', 'this_month'):
+        days   = 7 if period == 'this_week' else 30
+        cutoff = now - timedelta(days=days)
+
+        voted_ids    = {v.user_id for v in Vote.query.filter(Vote.created_at    >= cutoff).all()}
+        commented_ids = {c.user_id for c in Comment.query.filter(Comment.created_at >= cutoff).all()}
+        created_ids  = {d.user_id for d in Debate.query.filter(Debate.created_at  >= cutoff).all()}
+        active_ids   = voted_ids | commented_ids | created_ids
+
+        if not active_ids:
+            return render_template('leaderboard.html', users=[], sort=sort, period=period)
+
+        query = query.filter(User.id.in_(active_ids))
+
+    # Apply sort order
+    if sort == 'most_distinctive':
+        query = query.order_by(User.conformity_score.asc())
+    elif sort == 'most_wins':
+        query = query.order_by(User.debates_won.desc())
+    else:
+        query = query.order_by(User.reputation_score.desc())
+
+    users = query.all()
+
+    return render_template('leaderboard.html', users=users, sort=sort, period=period)
 
 @app.route("/user/<username>")
 def profile(username):
