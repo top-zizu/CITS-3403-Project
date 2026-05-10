@@ -1,0 +1,153 @@
+.home-main {
+  padding: 36px 28px 80px;
+}
+
+.home-hero {
+  max-width: 980px;
+  margin: 0 auto 28px;
+  padding: 28px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #2563eb, #6d28d9);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-hero h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.home-hero p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.home-create-btn {
+  background: white;
+  color: #2563eb;
+  padding: 10px 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.home-grid {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+}
+
+.home-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.large-card {
+  grid-row: span 3;
+}
+
+.home-card h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.debate-preview {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.debate-preview:last-child {
+  border-bottom: none;
+}
+
+.debate-preview h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 6px 0;
+}
+
+.debate-preview p,
+.activity {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.topic {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.topic-pill {
+  background: var(--accent-lt);
+  color: var(--accent);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* Sidebar centering */
+
+body.sidebar-open .home-main,
+body.sidebar-collapsed .home-main {
+  max-width: none;
+}
+
+/* Dark mode */
+
+body.dark-mode .home-card {
+  background: #111827;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+body.dark-mode .debate-preview {
+  border-bottom-color: #374151;
+}
+
+body.dark-mode .debate-preview p,
+body.dark-mode .activity {
+  color: #9ca3af;
+}
+
+body.dark-mode .stat-row {
+  border-bottom-color: #374151;
+}
+
+body.dark-mode .topic-pill {
+  background: #1f2937;
+  color: #60a5fa;
+}
+
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+}
