@@ -224,14 +224,13 @@ def user_profile():
 @app.route("/home")
 def home():
     return render_template("home.html")
-
-
-
-
-
+  
 @app.route("/notifications")
 def notifications():
     return render_template("notifications.html")
+@app.route("/friends")
+def friends():
+    return render_template("friends.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

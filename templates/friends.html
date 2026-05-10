@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Friends | DebateHub</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_friends.css') }}">
+
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='friends.js') }}" defer></script>
+</head>
+
+<body>
+  <div id="nav-placeholder"></div>
+  <div id="sidebar-placeholder"></div>
+
+  <main class="friends-main">
+    <section class="friends-header">
+      <h1>Friends</h1>
+      <p>Manage your DebateHub connections and pending requests.</p>
+    </section>
+
+    <section class="friends-tabs">
+      <button class="friends-tab active" data-tab="friends">Friends</button>
+      <button class="friends-tab" data-tab="requests">Friend Requests</button>
+    </section>
+
+    <section class="friends-card">
+      <div id="friends-list"></div>
+    </section>
+  </main>
+</body>
+</html>
