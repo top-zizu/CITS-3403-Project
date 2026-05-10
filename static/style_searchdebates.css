@@ -120,6 +120,7 @@
       margin-bottom: 16px;
       box-shadow: var(--shadow);
       transition: box-shadow .2s;
+      cursor: pointer;
     }
 
     .debate-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); }

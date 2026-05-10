@@ -228,9 +228,25 @@ def home():
 @app.route("/notifications")
 def notifications():
     return render_template("notifications.html")
+
 @app.route("/friends")
 def friends():
     return render_template("friends.html")
+
+@app.route("/saved-debates")
+@login_required
+def saved_debates():
+    return render_template("saved_debates.html")
+
+@app.route("/my-debates")
+@login_required
+def my_debates():
+    debates = Debate.query.filter_by(user_id=current_user.id).order_by(Debate.created_at.desc()).all()
+    return render_template("my_debates.html", debates=debates)
+
+@app.route("/debate/<int:debate_id>")
+def debate_detail(debate_id):
+    return render_template("debate_detail.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

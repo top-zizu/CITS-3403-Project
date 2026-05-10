@@ -37,10 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
               <path d="M20 21a8 8 0 0 0-16 0"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
-            Profile
+            User Profile
           </a>
 
-          <a href="/dashboard">
+          <a href="/my-debates">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             My Debates
           </a>
 
-          <a href="#">
+          <a href="/saved-debates">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
