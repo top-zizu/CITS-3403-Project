@@ -11,11 +11,12 @@
 #                     (recalculated on debate close, draws excluded)
 # ============================================================
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone, timedelta
-from models import db, Debate, Vote, Comment, CommentLike, Bookmark
+import secrets
+from models import db, Debate, Vote, Comment, CommentLike, Bookmark, DebateAccess
 
 debates_bp = Blueprint('debates', __name__)
 
@@ -130,6 +131,7 @@ def create_debate():
         expires_at   = expires_at,
         is_anonymous = is_anonymous,
         is_private   = is_private,
+        access_code  = secrets.token_hex(3) if is_private else None,
         user_id      = current_user.id,
     )
 
@@ -138,6 +140,10 @@ def create_debate():
 
     db.session.add(debate)
     db.session.commit()
+
+    # Show the access code to the author so they can share it
+    if is_private:
+        flash(f'Your debate is private. Share this access code: {debate.access_code}', 'info')
 
     return redirect(url_for('debates.view_debate', debate_id=debate.id))
 
@@ -150,6 +156,18 @@ def view_debate(debate_id):
     Full results shown after expiry, which also triggers close_debate().
     """
     debate = db.get_or_404(Debate, debate_id)
+
+    # Block access to private debates for unauthorised users
+    if debate.is_private:
+        if not current_user.is_authenticated:
+            return redirect(url_for('debates.debate_access', debate_id=debate_id))
+        if current_user.id != debate.user_id:
+            has_access = DebateAccess.query.filter_by(
+                user_id=current_user.id,
+                debate_id=debate_id
+            ).first()
+            if not has_access:
+                return redirect(url_for('debates.debate_access', debate_id=debate_id))
 
     if debate.is_active:
         vote_data = {
@@ -379,7 +397,56 @@ def like_comment(comment_id):
         'like_count': len(comment.likes),
     })
 
-    # ============================================================
+# ============================================================
+# PRIVATE DEBATE ACCESS
+# ============================================================
+
+@debates_bp.route('/debates/<int:debate_id>/access', methods=['GET', 'POST'])
+def debate_access(debate_id):
+    """
+    Code-entry gate for private debates.
+    GET  — show the access form.
+    POST — validate the code, grant access if correct.
+    """
+    debate = db.get_or_404(Debate, debate_id)
+
+    # Not actually private — send straight through
+    if not debate.is_private:
+        return redirect(url_for('debates.view_debate', debate_id=debate_id))
+
+    # Author always has access
+    if current_user.is_authenticated and current_user.id == debate.user_id:
+        return redirect(url_for('debates.view_debate', debate_id=debate_id))
+
+    error = None
+
+    if request.method == 'POST':
+        entered_code = request.form.get('access_code', '').strip()
+
+        if entered_code == debate.access_code:
+            if not current_user.is_authenticated:
+                flash('Please log in to access this private debate.', 'warning')
+                return redirect(url_for('login'))
+
+            existing = DebateAccess.query.filter_by(
+                user_id   = current_user.id,
+                debate_id = debate_id
+            ).first()
+            if not existing:
+                access = DebateAccess(
+                    user_id   = current_user.id,
+                    debate_id = debate_id
+                )
+                db.session.add(access)
+                db.session.commit()
+
+            return redirect(url_for('debates.view_debate', debate_id=debate_id))
+
+        error = 'Incorrect access code. Please try again.'
+
+    return render_template('debate_access.html', debate=debate, error=error)
+
+# ============================================================
 # BOOKMARKS
 # ============================================================
 

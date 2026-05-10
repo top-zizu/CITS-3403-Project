@@ -1,12 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>{{ debate.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding:1rem;margin:1rem;border-radius:4px;
+                    background:{% if category=='danger' %}#f8d7da{% elif category=='success' %}#d4edda{% else %}#d1ecf1{% endif %};">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <h1>{{ debate.title }}</h1>
     <p>{{ debate.description }}</p>
     <p>Category: {{ debate.category }}</p>
+    <p>Posted by: {{ debate.display_author }}</p>
+
+    {% if debate.is_private and current_user.is_authenticated and current_user.id == debate.user_id %}
+    <div style="background:#fff3cd;padding:1rem;margin:1rem 0;border-radius:4px;border:1px solid #ffc107;">
+        <strong>🔒 Private Debate</strong> — Share this access code with people you want to invite:
+        <code style="font-size:1.2rem;letter-spacing:0.3rem;margin-left:0.5rem;">{{ debate.access_code }}</code>
+    </div>
+    {% endif %}
 
     {% if vote_data.revealed %}
         <p>Agree: {{ vote_data.agree_pct }}%</p>
@@ -20,5 +41,6 @@
     {% for comment in comments %}
         <p><strong>{{ comment.author.username }}</strong>: {{ comment.content }}</p>
     {% endfor %}
+
 </body>
 </html>

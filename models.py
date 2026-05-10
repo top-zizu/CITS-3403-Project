@@ -80,6 +80,7 @@ class Debate(db.Model):
 
     is_private = db.Column(db.Boolean, default=False)
     is_anonymous = db.Column(db.Boolean, default=False)
+    access_code = db.Column(db.String(10), nullable=True)
 
     image_url = db.Column(db.String(300), nullable=True)
 
@@ -108,7 +109,8 @@ class Debate(db.Model):
 
     @property
     def is_active(self):
-        return datetime.now(timezone.utc) < self.expires_at and not self.is_closed
+        expires_aware = self.expires_at.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) < expires_aware and not self.is_closed
 
     @property
     def display_author(self):

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Debate — Enter Access Code</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .access-box {
+            max-width: 420px;
+            margin: 100px auto;
+            text-align: center;
+            padding: 2rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .access-box input {
+            padding: 0.6rem 1rem;
+            font-size: 1.3rem;
+            letter-spacing: 0.3rem;
+            text-align: center;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        .access-box button {
+            display: block;
+            margin: 0 auto;
+            padding: 0.5rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .error { color: #c0392b; margin-bottom: 1rem; }
+        .back-link { margin-top: 1.5rem; display: block; }
+    </style>
+</head>
+<body>
+    <div class="access-box">
+        <h2>🔒 Private Debate</h2>
+        <p>This debate is private. Enter the access code shared by the creator.</p>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input
+                type="text"
+                name="access_code"
+                placeholder="Access code"
+                maxlength="10"
+                autofocus
+                required
+            >
+            <button type="submit">Enter</button>
+        </form>
+
+        <a class="back-link" href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+    </div>
+</body>
+</html>
