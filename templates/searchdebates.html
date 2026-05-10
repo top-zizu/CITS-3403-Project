@@ -5,9 +5,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../static/style.css">
   <link rel="stylesheet" href="../static/style_searchdebates.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
   <script src="../static/main.js" defer></script>
 <body>
 <div id="nav-placeholder"></div>
+<div id="sidebar-placeholder"></div>
+
 <main>
   <div class="page-header">
     <h1>Discover Debates</h1>

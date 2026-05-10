@@ -6,14 +6,18 @@
 
 =======
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="../static/style.css">
-  <link rel="stylesheet" href="../static/style_leaderboard.css">
-  <script src="../static/main.js" defer></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_leaderboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
 </head>
 
 <body>
 
   <div id="nav-placeholder"></div>
+  <div id="sidebar-placeholder"></div>
 
   <main>
     <div class="page-header">

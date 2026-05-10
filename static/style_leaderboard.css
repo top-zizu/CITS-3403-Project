@@ -334,3 +334,22 @@ main {
     .leaderboard-row {
     animation: fadeUp .3s ease both;
     }
+    body.sidebar-open main,
+    body.sidebar-collapsed main {
+        max-width: none;
+    }
+
+    body.sidebar-open .page-header,
+    body.sidebar-open .sort-tabs,
+    body.sidebar-open .table-card,
+    body.sidebar-open .scoring-card,
+    body.sidebar-collapsed .page-header,
+    body.sidebar-collapsed .sort-tabs,
+    body.sidebar-collapsed .table-card,
+    body.sidebar-collapsed .scoring-card {
+    max-width: 980px;
+    margin-left: auto;
+    margin-right: auto;
+    }
+
+    
