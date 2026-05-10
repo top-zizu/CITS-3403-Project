@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Notifications | DebateHub</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_notifications.css') }}">
+
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='notifications.js') }}" defer></script>
+</head>
+
+<body>
+  <div id="nav-placeholder"></div>
+  <div id="sidebar-placeholder"></div>
+
+  <main class="notifications-main">
+    <section class="notifications-header">
+      <h1>Notifications</h1>
+      <p>Stay updated on debates, replies, friend requests, and activity.</p>
+    </section>
+
+    <section class="notification-tabs">
+      <button class="notification-tab active" data-filter="all">All</button>
+      <button class="notification-tab" data-filter="unread">Unread</button>
+      <button class="notification-tab" data-filter="debates">Debates</button>
+      <button class="notification-tab" data-filter="social">Social</button>
+    </section>
+
+    <section class="notifications-card">
+      <div id="notifications-list"></div>
+    </section>
+  </main>
+</body>
+</html>
