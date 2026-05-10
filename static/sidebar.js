@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="sidebar-divider"></div>
 
-      <div class="sidebar-label">Topics</div>
+      <div class="sidebar-label">Trending</div>
 
       <div class="sidebar-section">
 
