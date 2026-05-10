@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Home | DebateHub</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_home.css') }}">
+
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
+</head>
+
+<body>
+  <div id="nav-placeholder"></div>
+  <div id="sidebar-placeholder"></div>
+
+  <main class="home-main">
+
+    <section class="home-hero">
+      <div>
+        <h1>Welcome back, DebateMaster</h1>
+        <p>Jump into active debates, track your progress, and discover new topics.</p>
+      </div>
+
+      <a href="/debates/create" class="home-create-btn">+ New Debate</a>
+    </section>
+
+    <section class="home-grid">
+
+      <!-- FOR YOU -->
+
+      <div class="home-card large-card">
+        <h2>For You</h2>
+
+        <a href="/search" class="debate-preview">
+          <span class="topic">Technology</span>
+          <h3>Should AI tools be allowed in university assessments?</h3>
+          <p>128 votes · 34 comments · Active</p>
+        </a>
+
+        <a href="/search" class="debate-preview">
+          <span class="topic">Work</span>
+          <h3>Is remote work better than office work?</h3>
+          <p>95 votes · 21 comments · Active</p>
+        </a>
+
+        <a href="/search" class="debate-preview">
+          <span class="topic">Ethics</span>
+          <h3>Should social media platforms verify all users?</h3>
+          <p>76 votes · 18 comments · Active</p>
+        </a>
+      </div>
+
+      <!-- STATS -->
+
+      <div class="home-card">
+        <h2>Your Stats</h2>
+
+        <div class="stat-row">
+          <span>Points</span>
+          <strong>1,247</strong>
+        </div>
+
+        <div class="stat-row">
+          <span>Debates</span>
+          <strong>42</strong>
+        </div>
+
+        <div class="stat-row">
+          <span>Comments</span>
+          <strong>87</strong>
+        </div>
+      </div>
+
+      <!-- TRENDING -->
+
+      <div class="home-card">
+        <h2>Trending Topics</h2>
+
+        <a href="/search?topic=ai" class="topic-pill">AI</a>
+        <a href="/search?topic=politics" class="topic-pill">Politics</a>
+        <a href="/search?topic=gaming" class="topic-pill">Gaming</a>
+        <a href="/search?topic=philosophy" class="topic-pill">Philosophy</a>
+      </div>
+
+      <!-- FRIEND ACTIVITY -->
+
+      <div class="home-card">
+        <h2>Friend Activity</h2>
+
+        <p class="activity">Alex voted on “AI in schools”</p>
+        <p class="activity">Sarah commented on “Remote work”</p>
+        <p class="activity">Jamie created a new debate</p>
+      </div>
+
+    </section>
+  </main>
+</body>
+</html>

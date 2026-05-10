@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </button>
 
       <div class="sidebar-section">
-        <a href="/" class="sidebar-link">
+        <a href="/home" class="sidebar-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 10.5L12 3l9 7.5"/>
