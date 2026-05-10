@@ -225,5 +225,13 @@ def user_profile():
 def home():
     return render_template("home.html")
 
+
+
+
+
+@app.route("/notifications")
+def notifications():
+    return render_template("notifications.html")
+
 if __name__ == "__main__":
     app.run(debug=True)
