@@ -21,71 +21,75 @@
     <p>Start a discussion and let the community decide</p>
   </div>
 
-  {% if errors %}
-    <div class="alert alert-danger" style="max-width:700px;margin:0 auto 1rem;">
-      {% for error in errors %}<p style="margin:0;">{{ error }}</p>{% endfor %}
-    </div>
-  {% endif %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-  <!-- Real form that posts to Flask. Hidden inputs are populated by JS before submit. -->
-  <form id="debate-form" method="POST" action="{{ url_for('debates.create_debate') }}">
-    <input type="hidden" name="csrf_token"   value="{{ csrf_token() }}">
-    <input type="hidden" id="input-title"        name="title">
-    <input type="hidden" id="input-description"  name="description">
-    <input type="hidden" id="input-category"     name="category">
-    <input type="hidden" id="input-duration"     name="duration_days">
-    <input type="hidden" id="input-private"      name="is_private">
-    <input type="hidden" id="input-anonymous"    name="is_anonymous">
+  <form method="POST" action="/debates/create" id="debate-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="description"   id="description-hidden">
+    <input type="hidden" name="category"      id="category-hidden">
+    <input type="hidden" name="duration_days" id="duration-days-hidden" value="1">
+
+    <div class="card">
+
+      <!-- Prompt / Title -->
+      <div class="field">
+        <label for="prompt">Debate Prompt</label>
+        <textarea id="prompt" name="title" placeholder="e.g., Pineapple belongs on pizza" rows="4"></textarea>
+        <p class="field-hint">Keep it clear and concise. Avoid biased language.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Tags (used as category) -->
+      <div class="field">
+        <label>Select Tags (up to 3)</label>
+        <div class="tags-wrap" id="tags-wrap"></div>
+        <p class="tag-count" id="tag-count">0/3 tags selected</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Duration -->
+      <div class="field">
+        <label for="duration">Duration</label>
+        <div class="slider-row">
+          <input type="range" id="duration" min="1" max="168" value="24" />
+          <span class="duration-val" id="duration-val">24 hours</span>
+        </div>
+        <p class="field-hint">How long should this debate remain open? (1–168 hours)</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Private toggle -->
+      <div class="checkbox-row">
+        <input type="checkbox" id="private" name="is_private" />
+        <div class="cb-label">
+          <strong>Private Debate</strong>
+          <span>Only people with the link can view and participate</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="btn-row">
+        <button type="button" class="btn btn-cancel" onclick="handleCancel()">Cancel</button>
+        <button type="button" class="btn btn-submit" id="submit-btn" disabled onclick="handleSubmit()">Create Debate</button>
+      </div>
+
+    </div>
   </form>
-
-  <div class="card">
-
-    <div class="field">
-      <label for="prompt">Debate Prompt</label>
-      <textarea id="prompt" placeholder="e.g., Pineapple belongs on pizza" rows="4"></textarea>
-      <p class="field-hint">Keep it clear and concise. Avoid biased language.</p>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="field">
-      <label>Select Tags (up to 3)</label>
-      <div class="tags-wrap" id="tags-wrap"></div>
-      <p class="tag-count" id="tag-count">0/3 tags selected</p>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="field">
-      <label for="duration">Duration</label>
-      <div class="slider-row">
-        <input type="range" id="duration" min="1" max="168" value="24" />
-        <span class="duration-val" id="duration-val">24 hours</span>
-      </div>
-      <p class="field-hint">How long should this debate remain open? (1–168 hours)</p>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="checkbox-row">
-      <input type="checkbox" id="private" />
-      <div class="cb-label">
-        <strong>Private Debate</strong>
-        <span>Only people with the access code can view and participate</span>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button type="button" class="btn btn-cancel" onclick="handleCancel()">Cancel</button>
-      <button type="button" class="btn btn-submit" id="submit-btn" disabled onclick="handleSubmit()">Create Debate</button>
-    </div>
-
-  </div>
 </main>
 
 <div class="toast" id="toast"></div>
 
 <script>
+  /* ─── Tag data ──────────────────────────────────────────────── */
   const TAG_DATA = [
     { id: 'politics',      icon: '🏛️' },
     { id: 'technology',    icon: '💻' },
@@ -100,10 +104,11 @@
   const MAX_TAGS = 3;
   let selectedTags = new Set();
 
+  /* ─── Render tag buttons ────────────────────────────────────── */
   const wrap = document.getElementById('tags-wrap');
   TAG_DATA.forEach(({ id, icon }) => {
     const btn = document.createElement('button');
-    btn.type = 'button';
+    btn.type = 'button'; // prevent accidental form submit
     btn.className = 'tag';
     btn.dataset.tag = id;
     btn.innerHTML = `<span>${icon}</span> ${id}`;
@@ -133,6 +138,7 @@
     validateForm();
   }
 
+  /* ─── Duration slider ───────────────────────────────────────── */
   const slider  = document.getElementById('duration');
   const durVal  = document.getElementById('duration-val');
 
@@ -149,50 +155,53 @@
   });
   updateSliderBackground();
 
+  /* ─── Validation ────────────────────────────────────────────── */
   const promptEl  = document.getElementById('prompt');
   const submitBtn = document.getElementById('submit-btn');
+
   promptEl.addEventListener('input', validateForm);
 
   function validateForm() {
     submitBtn.disabled = promptEl.value.trim().length === 0;
   }
 
-  function handleCancel() {
-    if (promptEl.value.trim() || selectedTags.size) {
-      if (confirm('Discard this debate?')) resetForm();
-    }
-  }
-
+  /* ─── Submit — populate hidden fields, then submit form ─────── */
   function handleSubmit() {
-    const prompt = promptEl.value.trim();
-    if (!prompt) return;
+    const title = promptEl.value.trim();
+    if (!title) return;
 
-    // Populate the hidden form fields, then submit for real
-    document.getElementById('input-title').value       = prompt;
-    document.getElementById('input-description').value = prompt;
+    // description mirrors the title (single-field form)
+    document.getElementById('description-hidden').value = title;
 
-    const tagArray = [...selectedTags];
-    document.getElementById('input-category').value = tagArray.length > 0 ? tagArray[0] : 'General';
+    // category = first selected tag, or 'general' if none chosen
+    document.getElementById('category-hidden').value =
+      selectedTags.size > 0 ? [...selectedTags][0] : 'general';
 
+    // convert hours → days (min 1, max 14)
     const hours = parseInt(slider.value);
-    document.getElementById('input-duration').value = Math.min(14, Math.max(1, Math.ceil(hours / 24)));
-
-    document.getElementById('input-private').value   = document.getElementById('private').checked ? 'on' : '';
-    document.getElementById('input-anonymous').value = '';
+    const days  = Math.max(1, Math.min(14, Math.ceil(hours / 24)));
+    document.getElementById('duration-days-hidden').value = days;
 
     document.getElementById('debate-form').submit();
   }
 
-  function resetForm() {
-    promptEl.value = '';
-    selectedTags.clear();
-    document.querySelectorAll('.tag').forEach(b => b.classList.remove('selected', 'disabled'));
-    slider.value = 24;
-    durVal.textContent = '24 hours';
-    updateSliderBackground();
-    document.getElementById('private').checked = false;
-    document.getElementById('tag-count').textContent = '0/3 tags selected';
-    validateForm();
+  /* ─── Cancel ────────────────────────────────────────────────── */
+  function handleCancel() {
+    if (promptEl.value.trim() || selectedTags.size) {
+      if (confirm('Discard this debate?')) window.location.href = '/dashboard';
+    } else {
+      window.location.href = '/dashboard';
+    }
+  }
+
+  /* ─── Toast (kept for any future use) ──────────────────────── */
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 </script>
 </body>

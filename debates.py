@@ -1,6 +1,7 @@
 # ============================================================
 # debates.py
-# Covers: debate create/view/list, voting, comments
+# Covers: debate create/view/list, voting, comments,
+#         private debate access, delete
 # ============================================================
 # Scoring system:
 #   +20  reputation for creating a debate
@@ -29,9 +30,8 @@ def close_debate(debate):
     Only runs once — skipped if winner is already set.
     """
     if debate.winner is not None:
-        return  # Already closed
+        return
 
-    # --- Determine winner ---
     if debate.agree_votes > debate.disagree_votes:
         debate.winner = 'agree'
     elif debate.disagree_votes > debate.agree_votes:
@@ -41,7 +41,6 @@ def close_debate(debate):
 
     debate.is_closed = True
 
-    # --- Update won/lost record for all voters (not for draws) ---
     if debate.winner != 'draw':
         for vote in debate.votes:
             if vote.vote_type == debate.winner:
@@ -49,15 +48,9 @@ def close_debate(debate):
             else:
                 vote.user.debates_lost += 1
 
-        # --- Recalculate conformity score for each voter ---
-        # Conformity = how often this user has voted with the majority
-        # across all closed non-draw debates they participated in.
-        # SQLAlchemy autoflushes debate.winner before these queries run,
-        # so the current debate's result is included in the calculation.
         for vote in debate.votes:
             user = vote.user
 
-            # Total closed non-draw debates this user voted in
             total = (
                 db.session.query(Vote)
                 .join(Debate, Vote.debate_id == Debate.id)
@@ -67,7 +60,6 @@ def close_debate(debate):
                 .count()
             )
 
-            # How many times they voted with the winning side
             correct = (
                 db.session.query(Vote)
                 .join(Debate, Vote.debate_id == Debate.id)
@@ -135,13 +127,11 @@ def create_debate():
         user_id      = current_user.id,
     )
 
-    # Award participation points for creating a debate
     current_user.reputation_score += 20
 
     db.session.add(debate)
     db.session.commit()
 
-    # Show the access code to the author so they can share it
     if is_private:
         flash(f'Your debate is private. Share this access code: {debate.access_code}', 'info')
 
@@ -152,12 +142,10 @@ def create_debate():
 def view_debate(debate_id):
     """
     Displays a single debate page.
-    Vote distribution is hidden while the debate is active.
-    Full results shown after expiry, which also triggers close_debate().
+    Enforces private debate access gate before showing content.
     """
     debate = db.get_or_404(Debate, debate_id)
 
-    # Block access to private debates for unauthorised users
     if debate.is_private:
         if not current_user.is_authenticated:
             return redirect(url_for('debates.debate_access', debate_id=debate_id))
@@ -170,20 +158,15 @@ def view_debate(debate_id):
                 return redirect(url_for('debates.debate_access', debate_id=debate_id))
 
     if debate.is_active:
-        vote_data = {
-            'total':    debate.total_votes,
-            'revealed': False,
-        }
+        vote_data = {'total': debate.total_votes, 'revealed': False}
     else:
         close_debate(debate)
         total = debate.total_votes
         if total == 0:
             vote_data = {
-                'revealed':     True,
-                'total':        0,
-                'agree_pct':    0,
-                'disagree_pct': 0,
-                'winner':       debate.winner,
+                'revealed': True, 'total': 0,
+                'agree_pct': 0, 'disagree_pct': 0,
+                'winner': debate.winner,
             }
         else:
             vote_data = {
@@ -197,35 +180,32 @@ def view_debate(debate_id):
             }
 
     top_level_comments = Comment.query.filter_by(
-        debate_id         = debate_id,
-        parent_comment_id = None
+        debate_id=debate_id,
+        parent_comment_id=None
     ).order_by(Comment.created_at.asc()).all()
 
-    user_vote     = None
-    user_bookmark = None
+    user_vote = None
+    is_bookmarked = False
     if current_user.is_authenticated:
         user_vote = Vote.query.filter_by(
-            user_id   = current_user.id,
-            debate_id = debate_id
+            user_id=current_user.id, debate_id=debate_id
         ).first()
-        user_bookmark = Bookmark.query.filter_by(
-            user_id   = current_user.id,
-            debate_id = debate_id
-        ).first()
+        is_bookmarked = Bookmark.query.filter_by(
+            user_id=current_user.id, debate_id=debate_id
+        ).first() is not None
 
     return render_template(
         'debate.html',
-        debate        = debate,
-        vote_data     = vote_data,
-        comments      = top_level_comments,
-        user_vote     = user_vote,
-        user_bookmark = user_bookmark,
+        debate=debate,
+        vote_data=vote_data,
+        comments=top_level_comments,
+        user_vote=user_vote,
+        is_bookmarked=is_bookmarked,
     )
 
 
 @debates_bp.route('/debates')
 def debate_list():
-    """Returns all debates for the dashboard feed, newest first."""
     debates = Debate.query.order_by(Debate.created_at.desc()).all()
     return render_template('dashboard.html', debates=debates)
 
@@ -239,7 +219,6 @@ def debate_list():
 def cast_vote(debate_id):
     """
     Records an Agree or Disagree vote and awards +5 reputation.
-    Rules: debate must be active, one vote per user per debate.
     Returns JSON for AJAX calls.
     """
     debate = db.get_or_404(Debate, debate_id)
@@ -252,17 +231,16 @@ def cast_vote(debate_id):
         return jsonify({'error': 'Invalid vote type. Must be agree or disagree.'}), 400
 
     existing = Vote.query.filter_by(
-        user_id   = current_user.id,
-        debate_id = debate_id
+        user_id=current_user.id, debate_id=debate_id
     ).first()
 
     if existing:
         return jsonify({'error': 'You have already voted on this debate.'}), 400
 
     vote = Vote(
-        user_id   = current_user.id,
-        debate_id = debate_id,
-        vote_type = vote_type,
+        user_id=current_user.id,
+        debate_id=debate_id,
+        vote_type=vote_type,
     )
 
     if vote_type == 'agree':
@@ -270,7 +248,6 @@ def cast_vote(debate_id):
     else:
         debate.disagree_votes += 1
 
-    # Award participation points for voting
     current_user.reputation_score += 5
 
     try:
@@ -280,10 +257,7 @@ def cast_vote(debate_id):
         db.session.rollback()
         return jsonify({'error': 'You have already voted on this debate.'}), 400
 
-    return jsonify({
-        'success': True,
-        'total':   debate.total_votes,
-    })
+    return jsonify({'success': True, 'total': debate.total_votes})
 
 
 # ============================================================
@@ -293,24 +267,20 @@ def cast_vote(debate_id):
 @debates_bp.route('/debates/<int:debate_id>/comments', methods=['POST'])
 @login_required
 def post_comment(debate_id):
-    """
-    Posts a top-level comment. Awards +10 reputation to commenter.
-    Returns JSON.
-    """
-    debate = db.get_or_404(Debate, debate_id)
+    """Posts a top-level comment. Awards +10 reputation. Returns JSON."""
+    db.get_or_404(Debate, debate_id)
 
     content = request.form.get('content', '').strip()
     if not content:
         return jsonify({'error': 'Comment cannot be empty.'}), 400
 
     comment = Comment(
-        user_id           = current_user.id,
-        debate_id         = debate_id,
-        content           = content,
-        parent_comment_id = None,
+        user_id=current_user.id,
+        debate_id=debate_id,
+        content=content,
+        parent_comment_id=None,
     )
 
-    # Award participation points for commenting
     current_user.reputation_score += 10
 
     db.session.add(comment)
@@ -328,10 +298,7 @@ def post_comment(debate_id):
 @debates_bp.route('/comments/<int:comment_id>/reply', methods=['POST'])
 @login_required
 def post_reply(comment_id):
-    """
-    Posts a reply to an existing comment. Awards +10 reputation to replier.
-    Returns JSON.
-    """
+    """Posts a reply to an existing comment. Awards +10 reputation. Returns JSON."""
     parent = db.get_or_404(Comment, comment_id)
 
     content = request.form.get('content', '').strip()
@@ -339,13 +306,12 @@ def post_reply(comment_id):
         return jsonify({'error': 'Reply cannot be empty.'}), 400
 
     reply = Comment(
-        user_id           = current_user.id,
-        debate_id         = parent.debate_id,
-        content           = content,
-        parent_comment_id = parent.id,
+        user_id=current_user.id,
+        debate_id=parent.debate_id,
+        content=content,
+        parent_comment_id=parent.id,
     )
 
-    # Award participation points for replying
     current_user.reputation_score += 10
 
     db.session.add(reply)
@@ -363,26 +329,18 @@ def post_reply(comment_id):
 @debates_bp.route('/comments/<int:comment_id>/like', methods=['POST'])
 @login_required
 def like_comment(comment_id):
-    """
-    Likes a comment. Awards +2 reputation to the comment's author.
-    Rejects duplicate likes. Returns JSON.
-    """
+    """Likes a comment. Awards +2 reputation to the author. Returns JSON."""
     comment = db.get_or_404(Comment, comment_id)
 
     existing = CommentLike.query.filter_by(
-        user_id    = current_user.id,
-        comment_id = comment_id
+        user_id=current_user.id,
+        comment_id=comment_id
     ).first()
 
     if existing:
         return jsonify({'error': 'You have already liked this comment.'}), 400
 
-    like = CommentLike(
-        user_id    = current_user.id,
-        comment_id = comment_id,
-    )
-
-    # Award reputation to the comment author (not the liker)
+    like = CommentLike(user_id=current_user.id, comment_id=comment_id)
     comment.author.reputation_score += 2
 
     try:
@@ -392,10 +350,8 @@ def like_comment(comment_id):
         db.session.rollback()
         return jsonify({'error': 'You have already liked this comment.'}), 400
 
-    return jsonify({
-        'success':    True,
-        'like_count': len(comment.likes),
-    })
+    return jsonify({'success': True, 'like_count': len(comment.likes)})
+
 
 # ============================================================
 # PRIVATE DEBATE ACCESS
@@ -410,11 +366,9 @@ def debate_access(debate_id):
     """
     debate = db.get_or_404(Debate, debate_id)
 
-    # Not actually private — send straight through
     if not debate.is_private:
         return redirect(url_for('debates.view_debate', debate_id=debate_id))
 
-    # Author always has access
     if current_user.is_authenticated and current_user.id == debate.user_id:
         return redirect(url_for('debates.view_debate', debate_id=debate_id))
 
@@ -429,15 +383,14 @@ def debate_access(debate_id):
                 return redirect(url_for('login'))
 
             existing = DebateAccess.query.filter_by(
-                user_id   = current_user.id,
-                debate_id = debate_id
+                user_id=current_user.id,
+                debate_id=debate_id
             ).first()
             if not existing:
-                access = DebateAccess(
-                    user_id   = current_user.id,
-                    debate_id = debate_id
-                )
-                db.session.add(access)
+                db.session.add(DebateAccess(
+                    user_id=current_user.id,
+                    debate_id=debate_id
+                ))
                 db.session.commit()
 
             return redirect(url_for('debates.view_debate', debate_id=debate_id))
@@ -445,34 +398,6 @@ def debate_access(debate_id):
         error = 'Incorrect access code. Please try again.'
 
     return render_template('debate_access.html', debate=debate, error=error)
-
-# ============================================================
-# BOOKMARKS
-# ============================================================
-
-@debates_bp.route('/debates/<int:debate_id>/bookmark', methods=['POST'])
-@login_required
-def toggle_bookmark(debate_id):
-    """
-    Toggles a bookmark for the current user on a debate.
-    Returns JSON with the new bookmarked state.
-    """
-    db.get_or_404(Debate, debate_id)
-
-    existing = Bookmark.query.filter_by(
-        user_id   = current_user.id,
-        debate_id = debate_id
-    ).first()
-
-    if existing:
-        db.session.delete(existing)
-        db.session.commit()
-        return jsonify({'success': True, 'bookmarked': False})
-
-    bookmark = Bookmark(user_id=current_user.id, debate_id=debate_id)
-    db.session.add(bookmark)
-    db.session.commit()
-    return jsonify({'success': True, 'bookmarked': True})
 
 
 # ============================================================
@@ -483,9 +408,8 @@ def toggle_bookmark(debate_id):
 @login_required
 def delete_debate(debate_id):
     """
-    Permanently deletes a debate and all related data (votes, comments, bookmarks).
-    Only the debate's author can delete it.
-    Returns JSON.
+    Permanently deletes a debate and all related data.
+    Only the debate's author can delete it. Returns JSON.
     """
     debate = db.get_or_404(Debate, debate_id)
 
@@ -494,5 +418,4 @@ def delete_debate(debate_id):
 
     db.session.delete(debate)
     db.session.commit()
-
     return jsonify({'success': True})

@@ -1,83 +1,45 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>My Debates</title>
+  <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>My Debates | DebateHub</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../static/style.css">
-  <link rel="stylesheet" href="../static/style_searchdebates.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_searchdebates.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
   <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
-  <script src="../static/main.js" defer></script>
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
   <style>
-    /* Delete button */
     .delete-btn {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
-      color: #999;
-      transition: color 0.15s ease, background 0.15s ease;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 13px;
-      font-family: inherit;
+      position: absolute; top: 14px; right: 14px;
+      background: none; border: none; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px; color: #999;
+      transition: color .15s, background .15s; z-index: 2;
+      display: flex; align-items: center; gap: 5px;
+      font-size: 13px; font-family: inherit;
     }
     .delete-btn svg { width: 16px; height: 16px; }
-    .delete-btn:hover { color: #e05252; background: rgba(224,82,82,0.08); }
-
-    /* Confirm delete state */
+    .delete-btn:hover { color: #e05252; background: rgba(224,82,82,.08); }
     .delete-confirm {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      z-index: 2;
-      display: none;
+      position: absolute; top: 10px; right: 10px;
+      display: none; align-items: center; gap: 6px; z-index: 2;
     }
     .delete-confirm.visible { display: flex; }
-    .delete-confirm-label {
-      font-size: 12px;
-      color: #e05252;
-      font-family: inherit;
-      font-weight: 600;
-      white-space: nowrap;
-    }
+    .delete-confirm-label { font-size: 12px; color: #e05252; font-weight: 600; white-space: nowrap; }
     .delete-confirm-yes {
-      background: #e05252;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      padding: 4px 10px;
-      font-size: 12px;
-      font-family: inherit;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.15s;
+      background: #e05252; color: #fff; border: none; border-radius: 5px;
+      padding: 4px 10px; font-size: 12px; cursor: pointer; font-weight: 600;
     }
     .delete-confirm-yes:hover { background: #c03a3a; }
     .delete-confirm-no {
-      background: none;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 4px 8px;
-      font-size: 12px;
-      font-family: inherit;
-      cursor: pointer;
-      color: #666;
-      transition: border-color 0.15s, color 0.15s;
+      background: none; border: 1px solid #ccc; border-radius: 5px;
+      padding: 4px 8px; font-size: 12px; cursor: pointer; color: #666;
     }
-    .delete-confirm-no:hover { border-color: #999; color: #333; }
     .debate-card { position: relative; }
   </style>
-
+</head>
 <body>
 
 <div id="nav-placeholder"></div>
@@ -89,17 +51,17 @@
     <p>Check in with the debates you have created.</p>
   </div>
 
-  <!-- Search -->
   <div class="search-wrap">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
-    <input class="search-input" id="search-input" type="text" placeholder="Search debates..." />
+    <input class="search-input" id="search-input" type="text" placeholder="Search debates..."/>
   </div>
 
-  <!-- Tag Filters -->
   <div class="filter-label">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
     </svg>
     Filter by Tags
@@ -111,175 +73,125 @@
 </main>
 
 <script>
-  /* ── Data ────────────────────────────────────────────────── */
+  /* ── Real data from Flask ── */
   const DEBATES = [
+    {% for debate in debates %}
     {
-      id: 1,
-      prompt: 'Universal basic income should be implemented globally',
-      timer: 'Ends in about 12 hours',
-      agree: 723, disagree: 556,
-      comments: 0,
-      tags: ['politics', 'economics'],
-      voted: null,
+      id: {{ debate.id }},
+      prompt: {{ debate.title | tojson }},
+      timer: {% if debate.is_active %}'Expires {{ debate.expires_at.strftime("%d %b") }}'
+             {% else %}'Ended {{ debate.expires_at.strftime("%d %b") }}'{% endif %},
+      agree:    {{ debate.agree_votes }},
+      disagree: {{ debate.disagree_votes }},
+      comments: {{ debate.comments | length }},
+      tags:     [{{ debate.category | tojson }}],
+      voted:    null,
     },
-    {
-      id: 2,
-      prompt: 'Artificial Intelligence will create more jobs than it destroys',
-      timer: 'Ends in about 18 hours',
-      agree: 445, disagree: 678,
-      comments: 0,
-      tags: ['technology', 'work'],
-      voted: null,
-    },
-    {
-      id: 3,
-      prompt: 'Climate change is the most pressing issue of our time',
-      timer: 'Ends in 1 day',
-      agree: 892, disagree: 234,
-      comments: 0,
-      tags: ['politics', 'environment'],
-      voted: null,
-    },
-    {
-      id: 4,
-      prompt: 'Social media does more harm than good for society',
-      timer: 'Ends in 2 days',
-      agree: 612, disagree: 389,
-      comments: 0,
-      tags: ['technology', 'lifestyle'],
-      voted: null,
-    },
-    {
-      id: 5,
-      prompt: 'Remote work is better than working in an office',
-      timer: 'Ends in 3 days',
-      agree: 801, disagree: 420,
-      comments: 0,
-      tags: ['work', 'lifestyle'],
-      voted: null,
-    },
-    {
-      id: 6,
-      prompt: 'Pineapple belongs on pizza',
-      timer: 'Ends in about 6 hours',
-      agree: 334, disagree: 891,
-      comments: 0,
-      tags: ['food'],
-      voted: null,
-    },
+    {% endfor %}
   ];
 
-  const ALL_TAGS = ['politics', 'technology', 'lifestyle', 'food', 'work', 'animals', 'sports', 'entertainment'];
+  const ALL_TAGS    = ['politics','technology','lifestyle','food','work','animals','sports','entertainment'];
   let activeFilters = new Set();
-  let searchQuery = '';
+  let searchQuery   = '';
 
-  /* ── Render filter tags ──────────────────────────────────── */
+  function getCsrf() {
+    return document.querySelector('meta[name="csrf-token"]').content;
+  }
+
+  /* ── Filter tag buttons ── */
   const filterWrap = document.getElementById('filter-tags');
   ALL_TAGS.forEach(tag => {
     const btn = document.createElement('button');
-    btn.className = 'filter-tag';
-    btn.dataset.tag = tag;
-    btn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-        <line x1="7" y1="7" x2="7.01" y2="7"/>
-      </svg>
-      ${tag}
-    `;
-    btn.addEventListener('click', () => toggleFilter(tag, btn));
+    btn.className    = 'filter-tag';
+    btn.dataset.tag  = tag;
+    btn.innerHTML    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>${tag}`;
+    btn.addEventListener('click', () => {
+      activeFilters.has(tag) ? activeFilters.delete(tag) : activeFilters.add(tag);
+      btn.classList.toggle('active', activeFilters.has(tag));
+      renderDebates();
+    });
     filterWrap.appendChild(btn);
   });
 
-  function toggleFilter(tag, btn) {
-    if (activeFilters.has(tag)) {
-      activeFilters.delete(tag);
-      btn.classList.remove('active');
-    } else {
-      activeFilters.add(tag);
-      btn.classList.add('active');
-    }
-    renderDebates();
-  }
-
-  /* ── Search ──────────────────────────────────────────────── */
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value.toLowerCase();
     renderDebates();
   });
 
-  /* ── Render debates ──────────────────────────────────────── */
   function getFiltered() {
     return DEBATES.filter(d => {
-      const matchesSearch = !searchQuery || d.prompt.toLowerCase().includes(searchQuery);
-      const matchesTags = activeFilters.size === 0 || d.tags.some(t => activeFilters.has(t));
-      return matchesSearch && matchesTags;
+      const matchSearch = !searchQuery || d.prompt.toLowerCase().includes(searchQuery);
+      const matchTags   = activeFilters.size === 0 || d.tags.some(t => activeFilters.has(t));
+      return matchSearch && matchTags;
     });
   }
 
   function renderDebates() {
-    const list = document.getElementById('debates-list');
-    const empty = document.getElementById('empty-state');
+    const list     = document.getElementById('debates-list');
+    const empty    = document.getElementById('empty-state');
     const filtered = getFiltered();
-
     list.innerHTML = '';
-
-    if (filtered.length === 0) {
-      empty.style.display = 'block';
-      return;
-    }
-
-    empty.style.display = 'none';
+    empty.style.display = filtered.length === 0 ? 'block' : 'none';
 
     filtered.forEach((debate, i) => {
-      const total = debate.agree + debate.disagree;
-      const agreePct = ((debate.agree / total) * 100).toFixed(1);
+      const total      = debate.agree + debate.disagree;
+      const agreePct   = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
       const disagreePct = (100 - agreePct).toFixed(1);
 
       const card = document.createElement('div');
-      card.className = 'debate-card';
+      card.className         = 'debate-card';
       card.style.animationDelay = `${i * 60}ms`;
-
       card.innerHTML = `
         <button class="delete-btn" onclick="askDelete(${debate.id})" title="Delete debate">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
           </svg>
           Delete
         </button>
         <div class="delete-confirm" id="delete-confirm-${debate.id}">
           <span class="delete-confirm-label">Are you sure?</span>
           <button class="delete-confirm-yes" onclick="confirmDelete(${debate.id})">Delete</button>
-          <button class="delete-confirm-no" onclick="cancelDelete(${debate.id})">Cancel</button>
+          <button class="delete-confirm-no"  onclick="cancelDelete(${debate.id})">Cancel</button>
         </div>
         <div class="card-timer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
           ${debate.timer}
         </div>
         <div class="card-prompt">${debate.prompt}</div>
         <div class="vote-row">
-          <button class="vote-btn agree ${debate.voted === 'agree' ? 'voted' : ''}" onclick="vote(${debate.id}, 'agree')">
+          <button class="vote-btn agree ${debate.voted==='agree'?'voted':''}" onclick="vote(${debate.id},'agree')">
             <div class="vote-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
                 <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
               </svg>
               Agree
             </div>
             <div class="vote-count" id="agree-count-${debate.id}">${debate.agree.toLocaleString()}</div>
-            <div class="vote-pct" id="agree-pct-${debate.id}">${agreePct}%</div>
+            <div class="vote-pct"   id="agree-pct-${debate.id}">${agreePct}%</div>
           </button>
-          <button class="vote-btn disagree ${debate.voted === 'disagree' ? 'voted' : ''}" onclick="vote(${debate.id}, 'disagree')">
+          <button class="vote-btn disagree ${debate.voted==='disagree'?'voted':''}" onclick="vote(${debate.id},'disagree')">
             <div class="vote-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
                 <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
                 <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
               </svg>
               Disagree
             </div>
             <div class="vote-count" id="disagree-count-${debate.id}">${debate.disagree.toLocaleString()}</div>
-            <div class="vote-pct" id="disagree-pct-${debate.id}">${disagreePct}%</div>
+            <div class="vote-pct"   id="disagree-pct-${debate.id}">${disagreePct}%</div>
           </button>
         </div>
         <div class="progress-track">
@@ -287,75 +199,47 @@
         </div>
         <div class="card-footer">
           <a href="/debate/${debate.id}" class="comment-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             ${debate.comments} Comments
           </a>
           <div class="card-tags">
-            ${debate.tags.map(t => `
-              <span class="card-tag">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                  <line x1="7" y1="7" x2="7.01" y2="7"/>
-                </svg>
-                ${t}
-              </span>
-            `).join('')}
+            ${debate.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
           </div>
-        </div>
-      `;
+        </div>`;
 
-      list.appendChild(card);
-      
       card.style.cursor = 'pointer';
-      card.addEventListener('click', (e) => {
-          if (!e.target.closest('button') && !e.target.closest('a')) {
-              window.location.href = `/debate/${debate.id}`;
-          }
+      card.addEventListener('click', e => {
+        if (!e.target.closest('button') && !e.target.closest('a'))
+          window.location.href = `/debate/${debate.id}`;
       });
+      list.appendChild(card);
     });
   }
 
-  /* ── Voting ──────────────────────────────────────────────── */
+  /* ── Local vote display (visual only on list view) ── */
   function vote(id, side) {
     const debate = DEBATES.find(d => d.id === id);
     if (!debate) return;
-
-    // Toggle off if same vote
-    if (debate.voted === side) {
-      debate[side]--;
-      debate.voted = null;
-    } else {
-      // Remove previous vote
-      if (debate.voted) debate[debate.voted]--;
-      debate[side]++;
-      debate.voted = side;
-    }
-
-    // Update UI without full re-render
-    const total = debate.agree + debate.disagree;
-    const agreePct = ((debate.agree / total) * 100).toFixed(1);
-    const disagreePct = (100 - agreePct).toFixed(1);
-
-    document.getElementById(`agree-count-${id}`).textContent = debate.agree.toLocaleString();
+    if (debate.voted === side) { debate[side]--; debate.voted = null; }
+    else { if (debate.voted) debate[debate.voted]--; debate[side]++; debate.voted = side; }
+    const total     = debate.agree + debate.disagree;
+    const agreePct  = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
+    document.getElementById(`agree-count-${id}`).textContent    = debate.agree.toLocaleString();
     document.getElementById(`disagree-count-${id}`).textContent = debate.disagree.toLocaleString();
-    document.getElementById(`agree-pct-${id}`).textContent = `${agreePct}%`;
-    document.getElementById(`disagree-pct-${id}`).textContent = `${disagreePct}%`;
-    document.getElementById(`progress-${id}`).style.width = `${agreePct}%`;
-
-    // Update button voted state
+    document.getElementById(`agree-pct-${id}`).textContent      = `${agreePct}%`;
+    document.getElementById(`disagree-pct-${id}`).textContent   = `${(100 - agreePct).toFixed(1)}%`;
+    document.getElementById(`progress-${id}`).style.width       = `${agreePct}%`;
     const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
-    card.querySelectorAll('.vote-btn').forEach(btn => btn.classList.remove('voted'));
-    if (debate.voted) {
-      card.querySelector(`.vote-btn.${debate.voted}`).classList.add('voted');
-    }
+    card.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('voted'));
+    if (debate.voted) card.querySelector(`.vote-btn.${debate.voted}`).classList.add('voted');
   }
 
-  /* ── Delete ──────────────────────────────────────────────── */
+  /* ── Delete ── */
   function askDelete(id) {
     document.getElementById(`delete-confirm-${id}`).classList.add('visible');
-    // hide the delete button itself
     const card = document.getElementById(`delete-confirm-${id}`).closest('.debate-card');
     card.querySelector('.delete-btn').style.display = 'none';
   }
@@ -367,15 +251,21 @@
   }
 
   function confirmDelete(id) {
-    const idx = DEBATES.findIndex(d => d.id === id);
-    if (idx === -1) return;
-    DEBATES.splice(idx, 1);
-    renderDebates();
+    fetch(`/debates/${id}/delete`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf() },
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { alert(data.error); return; }
+      const idx = DEBATES.findIndex(d => d.id === id);
+      if (idx !== -1) DEBATES.splice(idx, 1);
+      renderDebates();
+    })
+    .catch(() => alert('Delete failed. Please try again.'));
   }
 
   renderDebates();
 </script>
-
 </body>
 </html>
-
