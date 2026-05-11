@@ -336,3 +336,17 @@ def like_comment(comment_id):
         'success':    True,
         'like_count': len(comment.likes),
     })
+
+@debates_bp.route('/debates/<int:debate_id>/delete', methods=['POST'])
+@login_required
+def delete_debate(debate_id):
+    """
+    Deletes a debate. Only the author can do this.
+    Called via AJAX from the My Debates page.
+    """
+    debate = db.get_or_404(Debate, debate_id)
+    if debate.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    db.session.delete(debate)
+    db.session.commit()
+    return jsonify({'success': True})
