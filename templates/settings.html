@@ -1,17 +1,22 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>Settings</title>
+  <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Settings | DebateHub</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="../static/style.css">
-  <link rel="stylesheet" href="../static/style_settings.css">
-  <script src="../static/main.js" defer></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_settings.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
 </head>
 
 <body>
 
   <div id="nav-placeholder"></div>
+  <div id="sidebar-placeholder"></div>
 
   <main>
     <div class="page-header">
@@ -19,102 +24,132 @@
       <p>Manage your account preferences and privacy</p>
     </div>
 
-    <!-- Profile Settings -->
-    <div class="settings-card">
-      <div class="card-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        Profile Settings
-      </div>
-      <div class="card-body">
-        <div class="field">
-          <label>Username</label>
-          <input type="text" id="username" value="DebateMaster" />
-        </div>
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="email" value="debate@example.com" />
-        </div>
-        <div class="field">
-          <label>Bio</label>
-          <textarea id="bio" maxlength="200">Passionate debater who loves discussing controversial topics.</textarea>
-          <div class="field-hint" id="bio-count">49/200 characters</div>
-        </div>
-        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
-      </div>
-    </div>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}" role="alert"
+               style="margin-bottom:16px; padding:12px 16px; border-radius:8px;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-    <!-- Privacy Settings -->
-    <div class="settings-card">
-      <div class="card-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-        Privacy Settings
-      </div>
-      <div class="card-body">
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <strong>Hide My Opinions</strong>
-            <span>Hide your voting stance until debates end</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="hide-opinions" />
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <strong>Anonymous Mode</strong>
-            <span>Post comments and votes anonymously</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="anon-mode" />
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-      </div>
-    </div>
+    <!-- ── Profile Settings ─────────────────────────────────── -->
+    <form method="POST" action="/settings">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <!-- Notifications -->
-    <div class="settings-card">
-      <div class="card-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-        Notifications
-      </div>
-      <div class="card-body">
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <strong>Email Notifications</strong>
-            <span>Receive updates about debates you're following</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="email-notif" checked />
-            <span class="toggle-track"></span>
-          </label>
+      <div class="settings-card">
+        <div class="card-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Profile Settings
         </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <strong>Push Notifications</strong>
-            <span>Get notified when debates end or someone replies to your comment</span>
+        <div class="card-body">
+          <div class="field">
+            <label>Username</label>
+            <input type="text" name="username"
+                   value="{{ current_user.username }}" />
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="push-notif" checked />
-            <span class="toggle-track"></span>
-          </label>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" name="email"
+                   value="{{ current_user.email }}" />
+          </div>
+          <div class="field">
+            <label>Bio</label>
+            <textarea name="bio" id="bio"
+                      maxlength="200">{{ current_user.bio or '' }}</textarea>
+            <div class="field-hint" id="bio-count">
+              {{ (current_user.bio or '') | length }}/200 characters
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Profile</button>
         </div>
       </div>
-    </div>
 
-    <!-- Security -->
+      <!-- ── Privacy Settings ──────────────────────────────── -->
+      <div class="settings-card">
+        <div class="card-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Privacy Settings
+        </div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <strong>Public Profile</strong>
+              <span>Allow other users to view your profile and activity</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="is_public"
+                     {{ 'checked' if current_user.is_public else '' }} />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Notifications ─────────────────────────────────── -->
+      <div class="settings-card">
+        <div class="card-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          Notifications
+        </div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <strong>New Debate Alerts</strong>
+              <span>Get notified when people you follow create debates</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notify_new_debates"
+                     {{ 'checked' if current_user.notify_new_debates else '' }} />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <strong>Comment Notifications</strong>
+              <span>Get notified when someone replies to your comments</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notify_comments"
+                     {{ 'checked' if current_user.notify_comments else '' }} />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <strong>Followed Accounts</strong>
+              <span>Get notified of activity from accounts you follow</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notify_followed_accounts"
+                     {{ 'checked' if current_user.notify_followed_accounts else '' }} />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </form><!-- end profile/privacy/notifications form -->
+
+    <!-- ── Security / Change Password ───────────────────────── -->
     <div class="settings-card">
       <div class="card-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
@@ -122,33 +157,42 @@
       </div>
       <div class="card-body">
         <div id="change-password-wrap">
-          <button class="btn btn-outline" onclick="togglePasswordForm()">Change Password</button>
+          <button type="button" class="btn btn-outline"
+                  onclick="togglePasswordForm()">Change Password</button>
         </div>
-        <div id="password-form" style="display:none; margin-top:16px;">
+
+        <form id="password-form" method="POST" action="/settings/password"
+              style="display:none; margin-top:16px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="field">
             <label>Current Password</label>
-            <input type="password" id="current-password" placeholder="Enter current password" />
+            <input type="password" name="current_password"
+                   placeholder="Enter current password" />
           </div>
           <div class="field">
             <label>New Password</label>
-            <input type="password" id="new-password" placeholder="Enter new password" />
+            <input type="password" name="new_password"
+                   placeholder="Enter new password" />
           </div>
           <div class="field">
             <label>Confirm New Password</label>
-            <input type="password" id="confirm-password" placeholder="Confirm new password" />
+            <input type="password" name="confirm_password"
+                   placeholder="Confirm new password" />
           </div>
           <div style="display:flex; gap:10px; margin-top:4px;">
-            <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
-            <button class="btn btn-outline" onclick="togglePasswordForm()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Password</button>
+            <button type="button" class="btn btn-outline"
+                    onclick="togglePasswordForm()">Cancel</button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
 
-    <!-- Danger Zone -->
+    <!-- ── Danger Zone ───────────────────────────────────────── -->
     <div class="settings-card danger">
       <div class="card-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
           <polyline points="3 6 5 6 21 6"/>
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
           <path d="M10 11v6M14 11v6"/>
@@ -160,9 +204,10 @@
         <div class="danger-row">
           <div class="danger-info">
             <strong>Delete Account</strong>
-            <span>Once you delete your account, there is no going back. Please be certain.</span>
+            <span>Once you delete your account, there is no going back.</span>
           </div>
-          <button class="btn btn-danger" onclick="showDeleteModal()">Delete Account</button>
+          <button type="button" class="btn btn-danger"
+                  onclick="showDeleteModal()">Delete Account</button>
         </div>
       </div>
     </div>
@@ -173,87 +218,54 @@
   <div class="modal-overlay" id="delete-modal">
     <div class="modal">
       <h3>Delete Account</h3>
-      <p>Are you sure you want to permanently delete your account? All your debates, votes, and comments will be lost. This action cannot be undone.</p>
-      <div class="modal-btns">
-        <button class="btn btn-outline" onclick="hideDeleteModal()">Cancel</button>
-        <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button>
-      </div>
+      <p>Enter your password to confirm. All your debates, votes, and comments
+         will be permanently deleted.</p>
+
+      <form method="POST" action="/settings/delete">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field" style="margin: 16px 0;">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Enter your password" />
+        </div>
+        <div class="modal-btns">
+          <button type="button" class="btn btn-outline"
+                  onclick="hideDeleteModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger">Yes, Delete My Account</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script>
-    /* ── Bio character count ─────────────────────────────────── */
-    const bioEl = document.getElementById('bio');
+    /* ── Bio character count ── */
+    const bioEl    = document.getElementById('bio');
     const bioCount = document.getElementById('bio-count');
-
-    bioEl.addEventListener('input', () => {
-      bioCount.textContent = `${bioEl.value.length}/200 characters`;
-    });
-
-    /* ── Save Profile ────────────────────────────────────────── */
-    function saveProfile() {
-      const username = document.getElementById('username').value.trim();
-      const email = document.getElementById('email').value.trim();
-      if (!username || !email) {
-        showToast('⚠️ Username and email are required.');
-        return;
-      }
-      showToast('✅ Profile saved successfully!');
+    if (bioEl) {
+      bioEl.addEventListener('input', () => {
+        bioCount.textContent = `${bioEl.value.length}/200 characters`;
+      });
     }
 
-    /* ── Password form toggle ────────────────────────────────── */
+    /* ── Password form toggle ── */
     function togglePasswordForm() {
       const form = document.getElementById('password-form');
       form.style.display = form.style.display === 'none' ? 'block' : 'none';
     }
 
-    function savePassword() {
-      const current = document.getElementById('current-password').value;
-      const next    = document.getElementById('new-password').value;
-      const confirm = document.getElementById('confirm-password').value;
-
-      if (!current || !next || !confirm) {
-        showToast('⚠️ Please fill in all password fields.');
-        return;
-      }
-      if (next !== confirm) {
-        showToast('⚠️ New passwords do not match.');
-        return;
-      }
-      if (next.length < 8) {
-        showToast('⚠️ Password must be at least 8 characters.');
-        return;
-      }
-      showToast('✅ Password updated successfully!');
-      togglePasswordForm();
-      document.getElementById('current-password').value = '';
-      document.getElementById('new-password').value = '';
-      document.getElementById('confirm-password').value = '';
-    }
-
-    /* ── Delete modal ────────────────────────────────────────── */
+    /* ── Show/hide delete modal ── */
     function showDeleteModal() {
       document.getElementById('delete-modal').classList.add('show');
     }
-
     function hideDeleteModal() {
       document.getElementById('delete-modal').classList.remove('show');
     }
-
-    function confirmDelete() {
-      hideDeleteModal();
-      showToast('Account deleted. Redirecting...');
-      setTimeout(() => window.location.href = 'homepage.html', 2000);
-    }
-
-    // Close modal on overlay click
     document.getElementById('delete-modal').addEventListener('click', function(e) {
       if (e.target === this) hideDeleteModal();
     });
 
-    /* ── Toast ───────────────────────────────────────────────── */
+    /* ── Toast (kept for compatibility) ── */
     let toastTimer;
     function showToast(msg) {
       const t = document.getElementById('toast');
