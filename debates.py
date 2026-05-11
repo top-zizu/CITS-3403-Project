@@ -1,26 +1,34 @@
 # ============================================================
+# debates.py
 # Covers: debate create/view/list, voting, comments
 # ============================================================
-# SETUP REQUIRED IN app.py :
-#   from debates import debates_bp
-#   app.register_blueprint(debates_bp)
+# Scoring system:
+#   +20  reputation for creating a debate
+#   +5   reputation for casting a vote
+#   +10  reputation for posting a comment or reply
+#   +2   reputation awarded to comment author when their comment is liked
+#   Conformity score: % of a user's votes that matched the winning side
+#                     (recalculated on debate close, draws excluded)
 # ============================================================
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, abort
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone, timedelta
 from models import db, Debate, Vote, Comment, CommentLike
 
 debates_bp = Blueprint('debates', __name__)
+
+
 def close_debate(debate):
     """
-    Declares the winner of an expired debate and updates
-    reputation scores for all users who voted.
+    Declares the winner of an expired debate.
+    Updates debates_won / debates_lost for all voters.
+    Recalculates conformity_score for each voter.
     Only runs once — skipped if winner is already set.
     """
     if debate.winner is not None:
-        return  # Already closed, nothing to do
+        return  # Already closed
 
     # --- Determine winner ---
     if debate.agree_votes > debate.disagree_votes:
@@ -30,20 +38,47 @@ def close_debate(debate):
     else:
         debate.winner = 'draw'
 
-    # --- Update stats for every user who voted ---
-    for vote in debate.votes:
-        voter = vote.user
-        if debate.winner == 'draw':
-            # Draw — no change to won/lost but small reputation gain for participating
-            voter.reputation_score += 1
-        elif vote.vote_type == debate.winner:
-            # Voted on the winning side
-            voter.debates_won += 1
-            voter.reputation_score += 10
-        else:
-            # Voted on the losing side
-            voter.debates_lost += 1
-            voter.reputation_score = max(0, voter.reputation_score - 5)
+    debate.is_closed = True
+
+    # --- Update won/lost record for all voters (not for draws) ---
+    if debate.winner != 'draw':
+        for vote in debate.votes:
+            if vote.vote_type == debate.winner:
+                vote.user.debates_won += 1
+            else:
+                vote.user.debates_lost += 1
+
+        # --- Recalculate conformity score for each voter ---
+        # Conformity = how often this user has voted with the majority
+        # across all closed non-draw debates they participated in.
+        # SQLAlchemy autoflushes debate.winner before these queries run,
+        # so the current debate's result is included in the calculation.
+        for vote in debate.votes:
+            user = vote.user
+
+            # Total closed non-draw debates this user voted in
+            total = (
+                db.session.query(Vote)
+                .join(Debate, Vote.debate_id == Debate.id)
+                .filter(Vote.user_id == user.id)
+                .filter(Debate.winner.isnot(None))
+                .filter(Debate.winner != 'draw')
+                .count()
+            )
+
+            # How many times they voted with the winning side
+            correct = (
+                db.session.query(Vote)
+                .join(Debate, Vote.debate_id == Debate.id)
+                .filter(Vote.user_id == user.id)
+                .filter(Debate.winner.isnot(None))
+                .filter(Debate.winner != 'draw')
+                .filter(Vote.vote_type == Debate.winner)
+                .count()
+            )
+
+            if total > 0:
+                user.conformity_score = round(correct / total, 4)
 
     db.session.commit()
 
@@ -56,26 +91,23 @@ def close_debate(debate):
 @login_required
 def create_debate():
     """
-    GET  — render the create debate form
-    POST — validate input, save debate to DB, redirect to the new debate page
+    GET  — render the create debate form.
+    POST — validate input, save debate, award +20 reputation, redirect.
     """
     if request.method == 'GET':
         return render_template('create_debate.html')
 
-    # --- Pull values from the submitted form ---
     title        = request.form.get('title', '').strip()
     description  = request.form.get('description', '').strip()
     category     = request.form.get('category', '').strip()
     is_anonymous = request.form.get('is_anonymous') == 'on'
     is_private   = request.form.get('is_private') == 'on'
 
-    # duration_days comes from a dropdown (e.g. 1, 3, 7, 14)
     try:
         duration_days = int(request.form.get('duration_days', 1))
     except ValueError:
         duration_days = 1
 
-    # --- Basic validation ---
     errors = []
     if not title:
         errors.append('Title is required.')
@@ -89,7 +121,6 @@ def create_debate():
     if errors:
         return render_template('create_debate.html', errors=errors)
 
-    # --- Build and save the debate ---
     expires_at = datetime.now(timezone.utc) + timedelta(days=duration_days)
 
     debate = Debate(
@@ -102,6 +133,9 @@ def create_debate():
         user_id      = current_user.id,
     )
 
+    # Award participation points for creating a debate
+    current_user.reputation_score += 20
+
     db.session.add(debate)
     db.session.commit()
 
@@ -113,11 +147,10 @@ def view_debate(debate_id):
     """
     Displays a single debate page.
     Vote distribution is hidden while the debate is active.
-    Full results are shown after expiry.
+    Full results shown after expiry, which also triggers close_debate().
     """
     debate = db.get_or_404(Debate, debate_id)
 
-    # --- Vote summary: hide breakdown while active ---
     if debate.is_active:
         vote_data = {
             'total':    debate.total_votes,
@@ -128,68 +161,62 @@ def view_debate(debate_id):
         total = debate.total_votes
         if total == 0:
             vote_data = {
-                'revealed':    True,
-                'total':       0,
-                'agree_pct':   0,
+                'revealed':     True,
+                'total':        0,
+                'agree_pct':    0,
                 'disagree_pct': 0,
-                'winner':      debate.winner,
+                'winner':       debate.winner,
             }
         else:
             vote_data = {
-                'revealed':    True,
-                'total':       total,
-                'agree':       debate.agree_votes,
-                'disagree':    debate.disagree_votes,
-                'agree_pct':   round((debate.agree_votes / total) * 100, 1),
+                'revealed':     True,
+                'total':        total,
+                'agree':        debate.agree_votes,
+                'disagree':     debate.disagree_votes,
+                'agree_pct':    round((debate.agree_votes / total) * 100, 1),
                 'disagree_pct': round((debate.disagree_votes / total) * 100, 1),
-                'winner':      debate.winner,
+                'winner':       debate.winner,
             }
-    # --- Get top-level comments (replies load via comment.replies in template) ---
+
     top_level_comments = Comment.query.filter_by(
-        debate_id=debate_id,
-        parent_comment_id=None
+        debate_id         = debate_id,
+        parent_comment_id = None
     ).order_by(Comment.created_at.asc()).all()
 
-    # --- Check if current user has already voted ---
     user_vote = None
     if current_user.is_authenticated:
         user_vote = Vote.query.filter_by(
-            user_id=current_user.id,
-            debate_id=debate_id
+            user_id   = current_user.id,
+            debate_id = debate_id
         ).first()
 
     return render_template(
         'debate.html',
-        debate         = debate,
-        vote_data      = vote_data,
-        comments       = top_level_comments,
-        user_vote      = user_vote,
+        debate    = debate,
+        vote_data = vote_data,
+        comments  = top_level_comments,
+        user_vote = user_vote,
     )
 
 
 @debates_bp.route('/debates')
 def debate_list():
-    """
-    Returns a list of all debates for the dashboard feed.
-    Ordered newest first.
-    """
+    """Returns all debates for the dashboard feed, newest first."""
     debates = Debate.query.order_by(Debate.created_at.desc()).all()
     return render_template('dashboard.html', debates=debates)
 
 
 # ============================================================
-# VOTING ROUTES
+# VOTING
 # ============================================================
 
 @debates_bp.route('/debates/<int:debate_id>/vote', methods=['POST'])
 @login_required
 def cast_vote(debate_id):
     """
-    Records an Agree or Disagree vote.
-    Rules enforced:
-      - Debate must still be active
-      - One vote per user per debate (UniqueConstraint handles this at DB level too)
-    Returns JSON so this can be called via AJAX.
+    Records an Agree or Disagree vote and awards +5 reputation.
+    Rules: debate must be active, one vote per user per debate.
+    Returns JSON for AJAX calls.
     """
     debate = db.get_or_404(Debate, debate_id)
 
@@ -200,16 +227,14 @@ def cast_vote(debate_id):
     if vote_type not in ('agree', 'disagree'):
         return jsonify({'error': 'Invalid vote type. Must be agree or disagree.'}), 400
 
-    # Check for duplicate vote before hitting the DB constraint
     existing = Vote.query.filter_by(
-        user_id=current_user.id,
-        debate_id=debate_id
+        user_id   = current_user.id,
+        debate_id = debate_id
     ).first()
 
     if existing:
         return jsonify({'error': 'You have already voted on this debate.'}), 400
 
-    # --- Save vote and update debate counters ---
     vote = Vote(
         user_id   = current_user.id,
         debate_id = debate_id,
@@ -221,11 +246,13 @@ def cast_vote(debate_id):
     else:
         debate.disagree_votes += 1
 
+    # Award participation points for voting
+    current_user.reputation_score += 5
+
     try:
         db.session.add(vote)
         db.session.commit()
     except IntegrityError:
-        # Catches race condition where two requests slip past the duplicate check
         db.session.rollback()
         return jsonify({'error': 'You have already voted on this debate.'}), 400
 
@@ -236,14 +263,14 @@ def cast_vote(debate_id):
 
 
 # ============================================================
-# COMMENT ROUTES
+# COMMENTS
 # ============================================================
 
 @debates_bp.route('/debates/<int:debate_id>/comments', methods=['POST'])
 @login_required
 def post_comment(debate_id):
     """
-    Posts a top-level comment on a debate (parent_comment_id = None).
+    Posts a top-level comment. Awards +10 reputation to commenter.
     Returns JSON.
     """
     debate = db.get_or_404(Debate, debate_id)
@@ -258,6 +285,9 @@ def post_comment(debate_id):
         content           = content,
         parent_comment_id = None,
     )
+
+    # Award participation points for commenting
+    current_user.reputation_score += 10
 
     db.session.add(comment)
     db.session.commit()
@@ -275,7 +305,7 @@ def post_comment(debate_id):
 @login_required
 def post_reply(comment_id):
     """
-    Posts a reply to an existing comment (sets parent_comment_id).
+    Posts a reply to an existing comment. Awards +10 reputation to replier.
     Returns JSON.
     """
     parent = db.get_or_404(Comment, comment_id)
@@ -290,6 +320,9 @@ def post_reply(comment_id):
         content           = content,
         parent_comment_id = parent.id,
     )
+
+    # Award participation points for replying
+    current_user.reputation_score += 10
 
     db.session.add(reply)
     db.session.commit()
@@ -307,8 +340,8 @@ def post_reply(comment_id):
 @login_required
 def like_comment(comment_id):
     """
-    Likes a comment. Rejects duplicate likes.
-    Returns JSON with updated like count.
+    Likes a comment. Awards +2 reputation to the comment's author.
+    Rejects duplicate likes. Returns JSON.
     """
     comment = db.get_or_404(Comment, comment_id)
 
@@ -324,6 +357,9 @@ def like_comment(comment_id):
         user_id    = current_user.id,
         comment_id = comment_id,
     )
+
+    # Award reputation to the comment author (not the liker)
+    comment.author.reputation_score += 2
 
     try:
         db.session.add(like)

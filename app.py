@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
@@ -26,7 +26,7 @@ def load_user(user_id):
 app.register_blueprint(debates_bp)
 
 
-# ── Public pages ────────────────────────────────────────────────
+# ── Public pages ─────────────────────────────────────────────────
 
 @app.route("/")
 def homepage():
@@ -37,7 +37,7 @@ def explore():
     return render_template('explore.html')
 
 
-# ── Auth ────────────────────────────────────────────────────────
+# ── Auth ──────────────────────────────────────────────────────────
 
 @app.route("/sign-up", methods=["GET", "POST"])
 def sign_up():
@@ -92,7 +92,7 @@ def forgot_password():
     return render_template("forgot_password.html", form=form)
 
 
-# ── Core pages ──────────────────────────────────────────────────
+# ── Core pages ────────────────────────────────────────────────────
 
 @app.route("/home")
 @login_required
@@ -109,10 +109,10 @@ def dashboard():
 
 @app.route("/search")
 def search():
-    query  = request.args.get("q", "").strip()
+    query    = request.args.get("q", "").strip()
     category = request.args.get("category", "").strip()
-    status = request.args.get("status", "").strip()
-    sort   = request.args.get("sort", "newest").strip()
+    status   = request.args.get("status", "").strip()
+    sort     = request.args.get("sort", "newest").strip()
 
     debates = Debate.query
     if query:
@@ -130,7 +130,6 @@ def search():
         debates = debates.filter(
             (Debate.expires_at <= now) | (Debate.is_closed == True)
         )
-
     if sort == "votes":
         debates = debates.order_by(
             (Debate.agree_votes + Debate.disagree_votes).desc()
@@ -143,7 +142,7 @@ def search():
     return render_template("searchdebates.html", debates=debates.all(), query=query)
 
 
-# ── Debate detail page ──────────────────────────────────────────
+# ── Debate detail ─────────────────────────────────────────────────
 
 @app.route("/debate/<int:debate_id>")
 def debate_detail(debate_id):
@@ -216,20 +215,50 @@ def toggle_bookmark(debate_id):
     return jsonify({"bookmarked": True})
 
 
-# ── Leaderboard ─────────────────────────────────────────────────
+# ── Leaderboard ───────────────────────────────────────────────────
 
 @app.route("/leaderboard")
 def leaderboard():
-    users = User.query.order_by(User.reputation_score.desc()).all()
-    return render_template("leaderboard.html", users=users)
+    """
+    sort:   most_active (default) | most_distinctive | most_wins
+    period: all_time (default)   | this_week        | this_month
+    """
+    sort   = request.args.get('sort', 'most_active')
+    period = request.args.get('period', 'all_time')
+
+    now   = datetime.now(timezone.utc)
+    query = User.query
+
+    if period in ('this_week', 'this_month'):
+        days   = 7 if period == 'this_week' else 30
+        cutoff = now - timedelta(days=days)
+
+        voted_ids     = {v.user_id for v in Vote.query.filter(Vote.created_at    >= cutoff).all()}
+        commented_ids = {c.user_id for c in Comment.query.filter(Comment.created_at >= cutoff).all()}
+        created_ids   = {d.user_id for d in Debate.query.filter(Debate.created_at  >= cutoff).all()}
+        active_ids    = voted_ids | commented_ids | created_ids
+
+        if not active_ids:
+            return render_template('leaderboard.html', users=[], sort=sort, period=period)
+
+        query = query.filter(User.id.in_(active_ids))
+
+    if sort == 'most_distinctive':
+        query = query.order_by(User.conformity_score.asc())
+    elif sort == 'most_wins':
+        query = query.order_by(User.debates_won.desc())
+    else:
+        query = query.order_by(User.reputation_score.desc())
+
+    return render_template('leaderboard.html', users=query.all(), sort=sort, period=period)
 
 
-# ── Profile ─────────────────────────────────────────────────────
+# ── Profile ───────────────────────────────────────────────────────
 
 def _profile_context(user):
     """Build the context dict shared by both profile routes."""
-    debates      = Debate.query.filter_by(user_id=user.id).order_by(Debate.created_at.desc()).all()
-    vote_count   = Vote.query.filter_by(user_id=user.id).count()
+    debates       = Debate.query.filter_by(user_id=user.id).order_by(Debate.created_at.desc()).all()
+    vote_count    = Vote.query.filter_by(user_id=user.id).count()
     comment_count = Comment.query.filter_by(user_id=user.id).count()
     follower_count  = user.followers.count()
     following_count = user.following.count()
@@ -262,7 +291,7 @@ def profile(username):
     return render_template("user-profile.html", **_profile_context(user))
 
 
-# ── Settings ────────────────────────────────────────────────────
+# ── Settings ──────────────────────────────────────────────────────
 
 @app.route("/settings", methods=["GET", "POST"])
 @login_required
@@ -284,7 +313,7 @@ def settings():
                 return render_template("settings.html")
             current_user.email = email
 
-        current_user.bio      = bio
+        current_user.bio                        = bio
         current_user.is_public                  = request.form.get("is_public") == "on"
         current_user.notify_new_debates         = request.form.get("notify_new_debates") == "on"
         current_user.notify_comments            = request.form.get("notify_comments") == "on"
@@ -300,9 +329,9 @@ def settings():
 @app.route("/settings/password", methods=["POST"])
 @login_required
 def change_password():
-    current_pw  = request.form.get("current_password", "")
-    new_pw      = request.form.get("new_password", "")
-    confirm_pw  = request.form.get("confirm_password", "")
+    current_pw = request.form.get("current_password", "")
+    new_pw     = request.form.get("new_password", "")
+    confirm_pw = request.form.get("confirm_password", "")
 
     if not current_user.check_password(current_pw):
         flash("Current password is incorrect.", "danger")
@@ -331,7 +360,7 @@ def delete_account():
     return redirect(url_for("homepage"))
 
 
-# ── Social ──────────────────────────────────────────────────────
+# ── Social ────────────────────────────────────────────────────────
 
 @app.route("/notifications")
 @login_required
@@ -351,7 +380,7 @@ def friends():
     return render_template("friends.html")
 
 
-# ── Debate lists ────────────────────────────────────────────────
+# ── Debate lists ──────────────────────────────────────────────────
 
 @app.route("/saved-debates")
 @login_required
@@ -362,8 +391,7 @@ def saved_debates():
         .order_by(Bookmark.created_at.desc())
         .all()
     )
-    debates = [b.debate for b in bookmarks]
-    return render_template("saved_debates.html", debates=debates)
+    return render_template("saved_debates.html", debates=[b.debate for b in bookmarks])
 
 
 @app.route("/my-debates")

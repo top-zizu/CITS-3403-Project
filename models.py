@@ -36,6 +36,7 @@ class User(db.Model, UserMixin):
 
     debates_won = db.Column(db.Integer, default=0)
     debates_lost = db.Column(db.Integer, default=0)
+    conformity_score = db.Column(db.Float, default=0.0)
 
     is_public = db.Column(db.Boolean, default=True)
 
