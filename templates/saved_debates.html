@@ -12,14 +12,14 @@
   <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
   <script src="{{ url_for('static', filename='main.js') }}" defer></script>
   <style>
-    .star-btn {
+    .save-btn {
       position: absolute; top: 14px; right: 14px;
       background: none; border: none; cursor: pointer;
-      padding: 4px; border-radius: 6px; color: #f5b800;
+      padding: 4px; border-radius: 6px; color: var(--accent);
       transition: transform .15s; z-index: 2; display: flex; align-items: center;
     }
-    .star-btn svg { width: 22px; height: 22px; }
-    .star-btn:hover { transform: scale(1.2); }
+    .save-btn svg { width: 22px; height: 22px; }
+    .save-btn:hover { transform: scale(1.12); }
     .debate-card { position: relative; }
   </style>
 </head>
@@ -129,10 +129,10 @@
       card.className         = 'debate-card';
       card.style.animationDelay = `${i * 60}ms`;
       card.innerHTML = `
-        <button class="star-btn" onclick="unsave(${debate.id})" title="Remove bookmark">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"
+        <button class="save-btn saved" onclick="unsave(${debate.id})" title="Unsave debate">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
           </svg>
         </button>
         <div class="card-timer">
