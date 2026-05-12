@@ -20,6 +20,7 @@ migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
 
 ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+DEBATE_TAGS = ["politics", "environment", "food", "lifestyle", "technology", "philosophy", "gaming"]
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -112,6 +113,7 @@ def _debate_to_dict(debate):
     total = debate.total_votes
     agree_pct = round((debate.agree_votes / total) * 100, 1) if total else 0
     disagree_pct = round((debate.disagree_votes / total) * 100, 1) if total else 0
+    reveal_results = not debate.is_active
 
     user_vote = None
     is_bookmarked = False
@@ -138,6 +140,7 @@ def _debate_to_dict(debate):
         "total_votes": total,
         "agree_pct": agree_pct,
         "disagree_pct": disagree_pct,
+        "reveal_results": reveal_results,
         "comments": Comment.query.filter_by(debate_id=debate.id).count(),
         "is_active": debate.is_active,
         "is_private": debate.is_private,
@@ -148,6 +151,43 @@ def _debate_to_dict(debate):
         "url": url_for("debate_detail", debate_id=debate.id),
         "created_at": _ensure_utc(debate.created_at).isoformat(),
         "expires_at": _ensure_utc(debate.expires_at).isoformat(),
+    }
+
+
+def _comment_stance(comment):
+    return comment.stance or "undecided"
+
+
+def _sort_comments_for_discussion(comments, parent_stance=None):
+    comments = list(comments)
+    if parent_stance:
+        different = [
+            comment for comment in comments
+            if _comment_stance(comment) != parent_stance
+        ]
+        same = [
+            comment for comment in comments
+            if _comment_stance(comment) == parent_stance
+        ]
+        return sorted(different, key=lambda c: len(c.likes), reverse=True) + sorted(same, key=lambda c: len(c.likes), reverse=True)
+    return sorted(comments, key=lambda c: len(c.likes), reverse=True)
+
+
+def _comment_to_dict(comment):
+    stance = _comment_stance(comment)
+    replies = _sort_comments_for_discussion(comment.replies, stance)
+    return {
+        "id": comment.id,
+        "author": comment.author.username,
+        "stance": stance,
+        "time": comment.created_at.strftime("%d %b %Y, %H:%M"),
+        "text": comment.content,
+        "likes": len(comment.likes),
+        "liked": (
+            current_user.is_authenticated
+            and any(like.user_id == current_user.id for like in comment.likes)
+        ),
+        "replies": [_comment_to_dict(reply) for reply in replies],
     }
 
 
@@ -187,11 +227,29 @@ def api_debates():
         debates = debates.order_by(Debate.created_at.desc())
 
     debates = [debate for debate in debates.limit(100).all() if _can_list_debate(debate)]
-    categories = sorted({debate.category for debate in debates if debate.category})
+    categories = DEBATE_TAGS
 
     return jsonify({
         "debates": [_debate_to_dict(debate) for debate in debates],
         "categories": categories,
+    })
+
+
+@app.route("/api/trending-tags")
+def api_trending_tags():
+    now = datetime.utcnow()
+    rows = (
+        db.session.query(Debate.category, db.func.count(Debate.id))
+        .filter(Debate.category.in_(DEBATE_TAGS))
+        .filter(Debate.expires_at > now, Debate.is_closed == False)
+        .group_by(Debate.category)
+        .all()
+    )
+    counts = {category: count for category, count in rows}
+    tags = sorted(DEBATE_TAGS, key=lambda tag: (-counts.get(tag, 0), tag))[:4]
+
+    return jsonify({
+        "tags": [{"tag": tag, "count": counts.get(tag, 0)} for tag in tags]
     })
 
 
@@ -344,9 +402,12 @@ def debate_detail(debate_id):
     top_level_comments = (
         Comment.query
         .filter_by(debate_id=debate_id, parent_comment_id=None)
-        .order_by(Comment.created_at.asc())
         .all()
     )
+    comment_tree = [
+        _comment_to_dict(comment)
+        for comment in _sort_comments_for_discussion(top_level_comments)
+    ]
 
     user_vote = None
     is_bookmarked = False
@@ -363,6 +424,7 @@ def debate_detail(debate_id):
         debate=debate,
         vote_data=vote_data,
         comments=top_level_comments,
+        comment_tree=comment_tree,
         user_vote=user_vote,
         is_bookmarked=is_bookmarked,
     )
