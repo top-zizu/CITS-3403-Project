@@ -62,8 +62,7 @@
     {
       id: {{ debate.id }},
       prompt: {{ debate.title | tojson }},
-      timer: {% if debate.is_active %}'Expires {{ debate.expires_at.strftime("%d %b") }}'
-             {% else %}'Ended {{ debate.expires_at.strftime("%d %b") }}'{% endif %},
+      timer: {{ ('Expires ' ~ debate.expires_at.strftime('%d %b') if debate.is_active else 'Ended ' ~ debate.expires_at.strftime('%d %b')) | tojson }},
       agree:    {{ debate.agree_votes }},
       disagree: {{ debate.disagree_votes }},
       comments: {{ debate.comments | length }},

@@ -22,13 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
       </button>
 
       <div class="nav-user" id="nav-user">
-        <div class="nav-avatar">D</div>
-        <span>DebateMaster</span>
+        <div class="nav-avatar" id="nav-avatar"></div>
+        <span id="nav-username">Account</span>
 
         <div class="user-menu hidden" id="user-menu">
           <div class="user-menu-header">
-            <strong>DebateMaster</strong>
-            <small>Gold debater</small>
+            <strong id="menu-username">Account</strong>
+            <small id="menu-reputation">Debater</small>
           </div>
 
           <a href="/user-profile">
@@ -104,6 +104,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const navUser = document.getElementById('nav-user');
   const userMenu = document.getElementById('user-menu');
   const darkModeButton = userMenu.querySelector('button');
+  const navAvatar = document.getElementById('nav-avatar');
+  const navUsername = document.getElementById('nav-username');
+  const menuUsername = document.getElementById('menu-username');
+  const menuReputation = document.getElementById('menu-reputation');
+
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function renderNavUser(user) {
+  navUsername.textContent = user.username;
+  menuUsername.textContent = user.username;
+  menuReputation.textContent = `${Number(user.reputation_score || 0).toLocaleString()} points`;
+
+  if (user.avatar_url) {
+    navAvatar.classList.add('has-image');
+    navAvatar.innerHTML = `<img src="${escapeHTML(user.avatar_url)}" alt="${escapeHTML(user.username)} profile picture">`;
+  } else {
+    navAvatar.classList.remove('has-image');
+    navAvatar.textContent = user.avatar;
+  }
+}
+
+fetch('/api/me')
+  .then(response => {
+    if (!response.ok) throw new Error('Not logged in');
+    return response.json();
+  })
+  .then(renderNavUser)
+  .catch(() => {
+    navUser.style.display = 'none';
+  });
 
 function applyTheme(isDark) {
   document.body.classList.toggle('dark-mode', isDark);

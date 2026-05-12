@@ -213,6 +213,19 @@ def api_dashboard():
     })
 
 
+@app.route("/api/me")
+@login_required
+def api_me():
+    return jsonify({
+        "id": current_user.id,
+        "username": current_user.username,
+        "avatar": current_user.username[:1].upper(),
+        "avatar_url": current_user.avatar_url,
+        "profile_url": url_for("user_profile"),
+        "reputation_score": current_user.reputation_score,
+    })
+
+
 # ── Auth ──────────────────────────────────────────────────────────
 
 @app.route("/sign-up", methods=["GET", "POST"])
