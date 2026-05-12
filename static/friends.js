@@ -26,7 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function tabEmptyMessage(tab) {
     if (tab === "followers") return "No followers yet.";
-    if (tab === "discover") return "No users found.";
+    if (tab === "discover" && searchQuery) return "No users found.";
+    if (tab === "discover") return "No mutual friends yet. Search to find more users.";
     return "You are not following anyone yet.";
   }
 
