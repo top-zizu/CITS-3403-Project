@@ -1,9 +1,13 @@
+import os
+from uuid import uuid4
+
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import or_
+from werkzeug.utils import secure_filename
 from models import db, User, Debate, Comment, Vote, Bookmark, Notification, DebateAccess
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
@@ -14,6 +18,8 @@ app.config.from_object("config.Config")
 db.init_app(app)
 migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
+
+ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -81,6 +87,25 @@ def _can_list_debate(debate):
         debate_id=debate.id,
         user_id=current_user.id,
     ).first() is not None
+
+
+def _allowed_avatar(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_AVATAR_EXTENSIONS
+
+
+def _save_avatar(file_storage):
+    if not file_storage or not file_storage.filename:
+        return None
+    if not _allowed_avatar(file_storage.filename):
+        raise ValueError("Profile picture must be a PNG, JPG, GIF, or WebP image.")
+
+    original = secure_filename(file_storage.filename)
+    extension = original.rsplit(".", 1)[1].lower()
+    filename = f"{uuid4().hex}.{extension}"
+    upload_dir = os.path.join(app.static_folder, "uploads", "avatars")
+    os.makedirs(upload_dir, exist_ok=True)
+    file_storage.save(os.path.join(upload_dir, filename))
+    return url_for("static", filename=f"uploads/avatars/{filename}")
 
 
 def _debate_to_dict(debate):
@@ -185,6 +210,19 @@ def api_dashboard():
             "comments": comment_count,
             "win_rate": win_rate,
         }
+    })
+
+
+@app.route("/api/me")
+@login_required
+def api_me():
+    return jsonify({
+        "id": current_user.id,
+        "username": current_user.username,
+        "avatar": current_user.username[:1].upper(),
+        "avatar_url": current_user.avatar_url,
+        "profile_url": url_for("user_profile"),
+        "reputation_score": current_user.reputation_score,
     })
 
 
@@ -393,6 +431,11 @@ def _profile_context(user):
     comment_count = Comment.query.filter_by(user_id=user.id).count()
     follower_count  = user.followers.count()
     following_count = user.following.count()
+    is_following = False
+    follows_you = False
+    if current_user.is_authenticated and current_user.id != user.id:
+        is_following = current_user.following.filter(User.id == user.id).first() is not None
+        follows_you = user.following.filter(User.id == current_user.id).first() is not None
     recent_votes = (
         Vote.query
         .filter_by(user_id=user.id)
@@ -406,6 +449,8 @@ def _profile_context(user):
         comment_count=comment_count,
         follower_count=follower_count,
         following_count=following_count,
+        is_following=is_following,
+        follows_you=follows_you,
         recent_votes=recent_votes,
     )
 
@@ -431,6 +476,7 @@ def settings():
         username = request.form.get("username", "").strip()
         email    = request.form.get("email", "").strip()
         bio      = request.form.get("bio", "").strip()
+        avatar = request.files.get("avatar")
 
         if username and username != current_user.username:
             if User.query.filter_by(username=username).first():
@@ -443,6 +489,13 @@ def settings():
                 flash("Email already in use.", "danger")
                 return render_template("settings.html")
             current_user.email = email
+
+        if avatar and avatar.filename:
+            try:
+                current_user.avatar_url = _save_avatar(avatar)
+            except ValueError as error:
+                flash(str(error), "danger")
+                return render_template("settings.html")
 
         current_user.bio                        = bio
         current_user.is_public                  = request.form.get("is_public") == "on"
@@ -509,6 +562,103 @@ def notifications():
 @login_required
 def friends():
     return render_template("friends.html")
+
+
+def _social_user_to_dict(user):
+    is_following = current_user.following.filter(User.id == user.id).first() is not None
+    follows_you = user.following.filter(User.id == current_user.id).first() is not None
+    debate_count = Debate.query.filter_by(user_id=user.id).count()
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "bio": user.bio or "",
+        "avatar": user.username[:1].upper(),
+        "avatar_url": user.avatar_url,
+        "profile_url": url_for("profile", username=user.username),
+        "follower_count": user.followers.count(),
+        "following_count": user.following.count(),
+        "debate_count": debate_count,
+        "is_following": is_following,
+        "follows_you": follows_you,
+        "is_mutual": is_following and follows_you,
+    }
+
+
+@app.route("/api/friends")
+@login_required
+def api_friends():
+    tab = request.args.get("tab", "following")
+    query_text = request.args.get("q", "").strip()
+
+    if tab == "requests":
+        tab = "followers"
+
+    if tab == "followers":
+        users_query = current_user.followers.order_by(User.username.asc())
+    elif tab == "discover":
+        users_query = User.query.filter(User.id != current_user.id).order_by(User.username.asc())
+    else:
+        tab = "following"
+        users_query = current_user.following.order_by(User.username.asc())
+
+    if query_text:
+        users_query = users_query.filter(User.username.ilike(f"%{query_text}%"))
+
+    users = users_query.limit(50).all()
+    if tab == "following":
+        users.sort(
+            key=lambda user: (
+                user.following.filter(User.id == current_user.id).first() is None,
+                user.username.lower(),
+            )
+        )
+    elif tab == "discover" and not query_text:
+        users = [
+            user for user in users
+            if current_user.following.filter(User.id == user.id).first() is not None
+            and user.following.filter(User.id == current_user.id).first() is not None
+        ]
+
+    return jsonify({
+        "tab": tab,
+        "users": [_social_user_to_dict(user) for user in users],
+        "counts": {
+            "following": current_user.following.count(),
+            "followers": current_user.followers.count(),
+            "discover": User.query.filter(User.id != current_user.id).count(),
+        },
+    })
+
+
+@app.route("/api/users/<int:user_id>/follow", methods=["POST", "DELETE"])
+@login_required
+def api_toggle_follow(user_id):
+    user = db.get_or_404(User, user_id)
+
+    if user.id == current_user.id:
+        return jsonify({"error": "You cannot follow yourself."}), 400
+
+    is_following = current_user.following.filter(User.id == user.id).first() is not None
+
+    if request.method == "POST":
+        if not is_following:
+            current_user.following.append(user)
+            if user.notify_followed_accounts:
+                db.session.add(Notification(
+                    user_id=user.id,
+                    notification_type="social",
+                    message=f"{current_user.username} started following you.",
+                    link_url=url_for("profile", username=current_user.username),
+                ))
+            db.session.commit()
+        return jsonify({"following": True, "user": _social_user_to_dict(user)})
+
+    if is_following:
+        current_user.following.remove(user)
+        db.session.commit()
+
+    return jsonify({"following": False, "user": _social_user_to_dict(user)})
 
 
 # ── Debate lists ──────────────────────────────────────────────────

@@ -226,6 +226,18 @@ section.container.pb-5 {
   font-family: 'Sora', sans-serif;
   font-size: .85rem;
   font-weight: 700;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.nav-avatar.has-image {
+  background: transparent;
+}
+
+.nav-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .nav-user span {

@@ -109,9 +109,9 @@ function createDebateCard(debate, index) {
   card.style.animationDelay = `${index * 60}ms`;
 
   card.innerHTML = `
-    <button class="star-btn ${debate.saved ? 'saved' : ''}" data-action="bookmark" title="${debate.saved ? 'Unsave' : 'Save debate'}">
-      <svg viewBox="0 0 24 24" fill="${debate.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    <button class="save-btn ${debate.saved ? 'saved' : ''}" data-action="bookmark" title="${debate.saved ? 'Unsave debate' : 'Save debate'}">
+      <svg viewBox="0 0 24 24" fill="${debate.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
       </svg>
     </button>
 

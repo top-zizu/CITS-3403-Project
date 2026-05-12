@@ -56,6 +56,39 @@ main {
     .field { margin-bottom: 16px; }
     .field:last-of-type { margin-bottom: 20px; }
 
+    .avatar-field {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .settings-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--accent-lt);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.4rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .settings-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .avatar-input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
     .field label {
       display: block;
       font-size: .8rem;
@@ -67,6 +100,7 @@ main {
     .field input[type="text"],
     .field input[type="email"],
     .field input[type="password"],
+    .field input[type="file"],
     .field textarea {
       width: 100%;
       padding: 10px 13px;

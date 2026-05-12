@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Friends | DebateHub</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -19,12 +20,17 @@
   <main class="friends-main">
     <section class="friends-header">
       <h1>Friends</h1>
-      <p>Manage your DebateHub connections and pending requests.</p>
+      <p>Manage who you follow, who follows you, and discover more debaters.</p>
     </section>
 
     <section class="friends-tabs">
-      <button class="friends-tab active" data-tab="friends">Friends</button>
-      <button class="friends-tab" data-tab="requests">Friend Requests</button>
+      <button class="friends-tab active" data-tab="following">Following</button>
+      <button class="friends-tab" data-tab="followers">Followers</button>
+      <button class="friends-tab" data-tab="discover">Discover</button>
+    </section>
+
+    <section class="friends-search">
+      <input id="friends-search-input" type="text" placeholder="Search users...">
     </section>
 
     <section class="friends-card">
