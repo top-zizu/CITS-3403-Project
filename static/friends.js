@@ -60,11 +60,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     list.innerHTML = users.map(user => `
-      <div class="friend-row" data-user-id="${user.id}">
-        <a class="friend-avatar" href="${user.profile_url}">${escapeHTML(user.avatar)}</a>
+      <div class="friend-row ${user.is_mutual ? "mutual" : ""}" data-user-id="${user.id}">
+        <a class="friend-avatar" href="${user.profile_url}">
+          ${user.avatar_url
+            ? `<img src="${escapeHTML(user.avatar_url)}" alt="${escapeHTML(user.username)} profile picture">`
+            : escapeHTML(user.avatar)}
+        </a>
 
         <div class="friend-info">
-          <h3><a href="${user.profile_url}">${escapeHTML(user.username)}</a></h3>
+          <h3>
+            <a href="${user.profile_url}">${escapeHTML(user.username)}</a>
+            ${user.is_mutual ? '<span class="mutual-tag">Friends</span>' : ""}
+          </h3>
           <p>${escapeHTML(userMeta(user, currentTab))}</p>
           ${user.bio ? `<p class="friend-bio">${escapeHTML(user.bio)}</p>` : ""}
         </div>
