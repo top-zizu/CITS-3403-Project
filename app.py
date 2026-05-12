@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
-from models import db, User, Debate, Comment, Vote, Bookmark, Notification
+from models import db, User, Debate, Comment, Vote, Bookmark, Notification, DebateAccess
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
 
@@ -148,6 +148,17 @@ def search():
 def debate_detail(debate_id):
     from debates import close_debate
     debate = db.get_or_404(Debate, debate_id)
+
+    # Private debate access gate
+    if debate.is_private:
+        if not current_user.is_authenticated:
+            return redirect(url_for('debates.debate_access', debate_id=debate_id))
+        if current_user.id != debate.user_id:
+            has_access = DebateAccess.query.filter_by(
+                user_id=current_user.id, debate_id=debate_id
+            ).first()
+            if not has_access:
+                return redirect(url_for('debates.debate_access', debate_id=debate_id))
 
     if debate.is_active:
         vote_data = {"total": debate.total_votes, "revealed": False}

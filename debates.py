@@ -135,73 +135,13 @@ def create_debate():
     if is_private:
         flash(f'Your debate is private. Share this access code: {debate.access_code}', 'info')
 
-    return redirect(url_for('debates.view_debate', debate_id=debate.id))
+    return redirect(url_for('debate_detail', debate_id=debate.id))
 
 
 @debates_bp.route('/debates/<int:debate_id>')
 def view_debate(debate_id):
-    """
-    Displays a single debate page.
-    Enforces private debate access gate before showing content.
-    """
-    debate = db.get_or_404(Debate, debate_id)
-
-    if debate.is_private:
-        if not current_user.is_authenticated:
-            return redirect(url_for('debates.debate_access', debate_id=debate_id))
-        if current_user.id != debate.user_id:
-            has_access = DebateAccess.query.filter_by(
-                user_id=current_user.id,
-                debate_id=debate_id
-            ).first()
-            if not has_access:
-                return redirect(url_for('debates.debate_access', debate_id=debate_id))
-
-    if debate.is_active:
-        vote_data = {'total': debate.total_votes, 'revealed': False}
-    else:
-        close_debate(debate)
-        total = debate.total_votes
-        if total == 0:
-            vote_data = {
-                'revealed': True, 'total': 0,
-                'agree_pct': 0, 'disagree_pct': 0,
-                'winner': debate.winner,
-            }
-        else:
-            vote_data = {
-                'revealed':     True,
-                'total':        total,
-                'agree':        debate.agree_votes,
-                'disagree':     debate.disagree_votes,
-                'agree_pct':    round((debate.agree_votes / total) * 100, 1),
-                'disagree_pct': round((debate.disagree_votes / total) * 100, 1),
-                'winner':       debate.winner,
-            }
-
-    top_level_comments = Comment.query.filter_by(
-        debate_id=debate_id,
-        parent_comment_id=None
-    ).order_by(Comment.created_at.asc()).all()
-
-    user_vote = None
-    is_bookmarked = False
-    if current_user.is_authenticated:
-        user_vote = Vote.query.filter_by(
-            user_id=current_user.id, debate_id=debate_id
-        ).first()
-        is_bookmarked = Bookmark.query.filter_by(
-            user_id=current_user.id, debate_id=debate_id
-        ).first() is not None
-
-    return render_template(
-        'debate.html',
-        debate=debate,
-        vote_data=vote_data,
-        comments=top_level_comments,
-        user_vote=user_vote,
-        is_bookmarked=is_bookmarked,
-    )
+    """Redirects to the main styled debate detail page."""
+    return redirect(url_for('debate_detail', debate_id=debate_id))
 
 
 @debates_bp.route('/debates')
@@ -367,10 +307,10 @@ def debate_access(debate_id):
     debate = db.get_or_404(Debate, debate_id)
 
     if not debate.is_private:
-        return redirect(url_for('debates.view_debate', debate_id=debate_id))
+        return redirect(url_for('debate_detail', debate_id=debate_id))
 
     if current_user.is_authenticated and current_user.id == debate.user_id:
-        return redirect(url_for('debates.view_debate', debate_id=debate_id))
+        return redirect(url_for('debate_detail', debate_id=debate_id))
 
     error = None
 
@@ -393,7 +333,7 @@ def debate_access(debate_id):
                 ))
                 db.session.commit()
 
-            return redirect(url_for('debates.view_debate', debate_id=debate_id))
+            return redirect(url_for('debate_detail', debate_id=debate_id))
 
         error = 'Incorrect access code. Please try again.'
 
