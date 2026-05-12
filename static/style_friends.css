@@ -4,6 +4,7 @@
 
 .friends-header,
 .friends-tabs,
+.friends-search,
 .friends-card {
   max-width: 900px;
   margin-left: auto;
@@ -47,6 +48,26 @@
   border-color: var(--accent);
 }
 
+.friends-search {
+  margin-bottom: 18px;
+}
+
+.friends-search input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+.friends-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
 .friends-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -68,6 +89,7 @@
 }
 
 .friend-avatar {
+  text-decoration: none;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -89,10 +111,24 @@
   margin: 0 0 4px;
 }
 
+.friend-info h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.friend-info h3 a:hover {
+  color: var(--accent);
+}
+
 .friend-info p {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.friend-bio {
+  margin-top: 4px !important;
+  overflow-wrap: anywhere;
 }
 
 .friend-status {
@@ -118,12 +154,15 @@
 }
 
 .accept-btn,
-.decline-btn {
+.decline-btn,
+.profile-btn {
   border: none;
   padding: 8px 13px;
   border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
+  font-size: 0.85rem;
 }
 
 .accept-btn {
@@ -136,6 +175,17 @@
   color: #374151;
 }
 
+.profile-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.profile-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .empty-state {
   padding: 24px;
   color: var(--muted);
@@ -144,7 +194,8 @@
 /* Dark mode */
 
 body.dark-mode .friends-card,
-body.dark-mode .friends-tab {
+body.dark-mode .friends-tab,
+body.dark-mode .friends-search input {
   background: #111827;
   border-color: #1f2937;
   color: #f9fafb;
@@ -164,7 +215,9 @@ body.dark-mode .friends-header p {
   color: #9ca3af;
 }
 
-body.dark-mode .decline-btn {
+body.dark-mode .decline-btn,
+body.dark-mode .profile-btn {
   background: #1f2937;
   color: #e5e7eb;
+  border-color: #374151;
 }
