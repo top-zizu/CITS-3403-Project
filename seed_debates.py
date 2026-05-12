@@ -63,6 +63,49 @@ DEMO_DEBATES = [
 ]
 
 
+DEMO_SOCIAL_USERS = [
+    {
+        "username": "logicqueen",
+        "email": "logicqueen@example.com",
+        "bio": "Loves structured arguments and policy debates.",
+    },
+    {
+        "username": "argumentking",
+        "email": "argumentking@example.com",
+        "bio": "Here for spicy claims and calm evidence.",
+    },
+    {
+        "username": "voiceofreason",
+        "email": "voiceofreason@example.com",
+        "bio": "Usually looking for the middle ground.",
+    },
+    {
+        "username": "contrarymary",
+        "email": "contrarymary@example.com",
+        "bio": "Professional devil's advocate.",
+    },
+    {
+        "username": "mindchanger",
+        "email": "mindchanger@example.com",
+        "bio": "Open to being convinced.",
+    },
+]
+
+
+DEMO_FOLLOWING = [
+    "logicqueen",
+    "argumentking",
+    "voiceofreason",
+]
+
+
+DEMO_FOLLOWERS = [
+    "voiceofreason",
+    "contrarymary",
+    "mindchanger",
+]
+
+
 def get_or_create_demo_user():
     user = User.query.filter_by(username=DEMO_USER["username"]).first()
     if user:
@@ -73,6 +116,54 @@ def get_or_create_demo_user():
     db.session.add(user)
     db.session.commit()
     return user
+
+
+def get_or_create_social_user(user_data):
+    user = User.query.filter_by(username=user_data["username"]).first()
+    if user:
+        if not user.bio:
+            user.bio = user_data["bio"]
+        return user
+
+    user = User(
+        username=user_data["username"],
+        email=user_data["email"],
+        bio=user_data["bio"],
+    )
+    user.set_password("password123")
+    db.session.add(user)
+    return user
+
+
+def ensure_follow(follower, followed):
+    if follower.id == followed.id:
+        return False
+    if follower.following.filter(User.id == followed.id).first():
+        return False
+    follower.following.append(followed)
+    return True
+
+
+def seed_social_graph():
+    demo_user = get_or_create_demo_user()
+    users_by_username = {}
+
+    for user_data in DEMO_SOCIAL_USERS:
+        user = get_or_create_social_user(user_data)
+        users_by_username[user.username] = user
+
+    db.session.flush()
+
+    created_links = 0
+
+    for username in DEMO_FOLLOWING:
+        created_links += int(ensure_follow(demo_user, users_by_username[username]))
+
+    for username in DEMO_FOLLOWERS:
+        created_links += int(ensure_follow(users_by_username[username], demo_user))
+
+    db.session.commit()
+    print(f"Social seed complete: {len(users_by_username)} demo users ready, {created_links} follow links created.")
 
 
 def seed_debates():
@@ -112,3 +203,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         seed_debates()
+        seed_social_graph()

@@ -1,9 +1,13 @@
+import os
+from uuid import uuid4
+
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import or_
+from werkzeug.utils import secure_filename
 from models import db, User, Debate, Comment, Vote, Bookmark, Notification, DebateAccess
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
@@ -14,6 +18,8 @@ app.config.from_object("config.Config")
 db.init_app(app)
 migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
+
+ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -81,6 +87,25 @@ def _can_list_debate(debate):
         debate_id=debate.id,
         user_id=current_user.id,
     ).first() is not None
+
+
+def _allowed_avatar(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_AVATAR_EXTENSIONS
+
+
+def _save_avatar(file_storage):
+    if not file_storage or not file_storage.filename:
+        return None
+    if not _allowed_avatar(file_storage.filename):
+        raise ValueError("Profile picture must be a PNG, JPG, GIF, or WebP image.")
+
+    original = secure_filename(file_storage.filename)
+    extension = original.rsplit(".", 1)[1].lower()
+    filename = f"{uuid4().hex}.{extension}"
+    upload_dir = os.path.join(app.static_folder, "uploads", "avatars")
+    os.makedirs(upload_dir, exist_ok=True)
+    file_storage.save(os.path.join(upload_dir, filename))
+    return url_for("static", filename=f"uploads/avatars/{filename}")
 
 
 def _debate_to_dict(debate):
@@ -438,6 +463,7 @@ def settings():
         username = request.form.get("username", "").strip()
         email    = request.form.get("email", "").strip()
         bio      = request.form.get("bio", "").strip()
+        avatar = request.files.get("avatar")
 
         if username and username != current_user.username:
             if User.query.filter_by(username=username).first():
@@ -450,6 +476,13 @@ def settings():
                 flash("Email already in use.", "danger")
                 return render_template("settings.html")
             current_user.email = email
+
+        if avatar and avatar.filename:
+            try:
+                current_user.avatar_url = _save_avatar(avatar)
+            except ValueError as error:
+                flash(str(error), "danger")
+                return render_template("settings.html")
 
         current_user.bio                        = bio
         current_user.is_public                  = request.form.get("is_public") == "on"
@@ -528,6 +561,7 @@ def _social_user_to_dict(user):
         "username": user.username,
         "bio": user.bio or "",
         "avatar": user.username[:1].upper(),
+        "avatar_url": user.avatar_url,
         "profile_url": url_for("profile", username=user.username),
         "follower_count": user.followers.count(),
         "following_count": user.following.count(),
@@ -559,6 +593,13 @@ def api_friends():
         users_query = users_query.filter(User.username.ilike(f"%{query_text}%"))
 
     users = users_query.limit(50).all()
+    if tab == "following":
+        users.sort(
+            key=lambda user: (
+                user.following.filter(User.id == current_user.id).first() is None,
+                user.username.lower(),
+            )
+        )
 
     return jsonify({
         "tab": tab,
