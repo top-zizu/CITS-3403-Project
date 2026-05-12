@@ -393,6 +393,11 @@ def _profile_context(user):
     comment_count = Comment.query.filter_by(user_id=user.id).count()
     follower_count  = user.followers.count()
     following_count = user.following.count()
+    is_following = False
+    follows_you = False
+    if current_user.is_authenticated and current_user.id != user.id:
+        is_following = current_user.following.filter(User.id == user.id).first() is not None
+        follows_you = user.following.filter(User.id == current_user.id).first() is not None
     recent_votes = (
         Vote.query
         .filter_by(user_id=user.id)
@@ -406,6 +411,8 @@ def _profile_context(user):
         comment_count=comment_count,
         follower_count=follower_count,
         following_count=following_count,
+        is_following=is_following,
+        follows_you=follows_you,
         recent_votes=recent_votes,
     )
 
@@ -509,6 +516,89 @@ def notifications():
 @login_required
 def friends():
     return render_template("friends.html")
+
+
+def _social_user_to_dict(user):
+    is_following = current_user.following.filter(User.id == user.id).first() is not None
+    follows_you = user.following.filter(User.id == current_user.id).first() is not None
+    debate_count = Debate.query.filter_by(user_id=user.id).count()
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "bio": user.bio or "",
+        "avatar": user.username[:1].upper(),
+        "profile_url": url_for("profile", username=user.username),
+        "follower_count": user.followers.count(),
+        "following_count": user.following.count(),
+        "debate_count": debate_count,
+        "is_following": is_following,
+        "follows_you": follows_you,
+        "is_mutual": is_following and follows_you,
+    }
+
+
+@app.route("/api/friends")
+@login_required
+def api_friends():
+    tab = request.args.get("tab", "following")
+    query_text = request.args.get("q", "").strip()
+
+    if tab == "requests":
+        tab = "followers"
+
+    if tab == "followers":
+        users_query = current_user.followers.order_by(User.username.asc())
+    elif tab == "discover":
+        users_query = User.query.filter(User.id != current_user.id).order_by(User.username.asc())
+    else:
+        tab = "following"
+        users_query = current_user.following.order_by(User.username.asc())
+
+    if query_text:
+        users_query = users_query.filter(User.username.ilike(f"%{query_text}%"))
+
+    users = users_query.limit(50).all()
+
+    return jsonify({
+        "tab": tab,
+        "users": [_social_user_to_dict(user) for user in users],
+        "counts": {
+            "following": current_user.following.count(),
+            "followers": current_user.followers.count(),
+            "discover": User.query.filter(User.id != current_user.id).count(),
+        },
+    })
+
+
+@app.route("/api/users/<int:user_id>/follow", methods=["POST", "DELETE"])
+@login_required
+def api_toggle_follow(user_id):
+    user = db.get_or_404(User, user_id)
+
+    if user.id == current_user.id:
+        return jsonify({"error": "You cannot follow yourself."}), 400
+
+    is_following = current_user.following.filter(User.id == user.id).first() is not None
+
+    if request.method == "POST":
+        if not is_following:
+            current_user.following.append(user)
+            if user.notify_followed_accounts:
+                db.session.add(Notification(
+                    user_id=user.id,
+                    notification_type="social",
+                    message=f"{current_user.username} started following you.",
+                    link_url=url_for("profile", username=current_user.username),
+                ))
+            db.session.commit()
+        return jsonify({"following": True, "user": _social_user_to_dict(user)})
+
+    if is_following:
+        current_user.following.remove(user)
+        db.session.commit()
+
+    return jsonify({"following": False, "user": _social_user_to_dict(user)})
 
 
 # ── Debate lists ──────────────────────────────────────────────────
