@@ -1,148 +1,188 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const filterButtons = document.querySelectorAll(".filters button");
-    const debateContainer = document.querySelector(".debates");
-  
-    if (!debateContainer) return;
-  
-    const debates = [
-      {
-        title: "Remote work is better than office work",
-        status: "active",
-        time: "Ends in 24 hours",
-        agree: 72,
-        disagree: 28,
-        comments: 12,
-        tags: ["work", "lifestyle"]
-      },
-      {
-        title: "AI tools should be allowed in university assessments",
-        status: "active",
-        time: "Ends in 12 hours",
-        agree: 55,
-        disagree: 45,
-        comments: 8,
-        tags: ["technology", "education"]
-      },
-      {
-        title: "Social media has a net negative impact on society",
-        status: "active",
-        time: "Ends in 8 hours",
-        agree: 64,
-        disagree: 36,
-        comments: 18,
-        tags: ["technology", "society"]
-      },
-      {
-        title: "Cats are better pets than dogs",
-        status: "ended",
-        time: "Ended",
-        agree: 81,
-        disagree: 19,
-        comments: 6,
-        tags: ["animals", "lifestyle"]
-      }
-    ];
-  
-    function renderDebates(filter = "all") {
-      const filtered =
-        filter === "all"
-          ? debates
-          : debates.filter(debate => debate.status === filter);
-  
-      debateContainer.innerHTML = filtered.map(debate => {
-        const total = debate.agree + debate.disagree;
-        const agreePercent = total === 0 ? 0 : ((debate.agree / total) * 100).toFixed(1);
-        const disagreePercent = total === 0 ? 0 : ((debate.disagree / total) * 100).toFixed(1);
-  
-        return `
-          <article class="debate-card" data-user-vote="neutral" data-status="${debate.status}">
-            <p class="time">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              ${debate.time}
-            </p>
-  
-            <h2>${debate.title}</h2>
-  
-            <div class="votes">
-              <div class="agree">
-                <p>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M7 10v11"/>
-                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
-                  </svg>
-                  Agree
-                </p>
-                <strong>${debate.agree}</strong>
-                <div>${agreePercent}%</div>
-              </div>
-  
-              <div class="disagree">
-                <p>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 14V3"/>
-                    <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"/>
-                  </svg>
-                  Disagree
-                </p>
-                <strong>${debate.disagree}</strong>
-                <div>${disagreePercent}%</div>
-              </div>
-            </div>
-  
-            <div class="progress-bar">
-              <div class="agree-bar" style="width: ${agreePercent}%"></div>
-              <div class="disagree-bar" style="width: ${disagreePercent}%"></div>
-            </div>
-  
-            <div class="card-footer">
-              <button class="comments-btn">
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const filterButtons = document.querySelectorAll(".filters button");
+  const debateContainer = document.querySelector(".debates");
+  let debates = [];
+  let currentFilter = "all";
+
+  if (!debateContainer) return;
+
+  function escapeHTML(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString();
+  }
+
+  function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  }
+
+  async function loadDashboardStats() {
+    const response = await fetch("/api/dashboard");
+    if (!response.ok) throw new Error("Could not load dashboard stats");
+
+    const data = await response.json();
+    const stats = data.stats || {};
+
+    setText("stat-points", formatNumber(stats.points));
+    setText("stat-debates", formatNumber(stats.debates));
+    setText("stat-comments", formatNumber(stats.comments));
+    setText("stat-win-rate", `${formatNumber(stats.win_rate)}%`);
+  }
+
+  async function loadDebates() {
+    const response = await fetch("/api/debates?sort=newest");
+    if (!response.ok) throw new Error("Could not load debates");
+
+    const data = await response.json();
+    debates = data.debates || [];
+    renderDebates();
+  }
+
+  function renderDebates() {
+    const filtered =
+      currentFilter === "all"
+        ? debates
+        : debates.filter(debate => debate.status === currentFilter);
+
+    if (filtered.length === 0) {
+      debateContainer.innerHTML = `<p class="empty-state">No debates to show.</p>`;
+      return;
+    }
+
+    debateContainer.innerHTML = filtered.map(debate => {
+      const agreePercent = debate.total_votes === 0 ? 0 : debate.agree_pct;
+      const disagreePercent = debate.total_votes === 0 ? 0 : debate.disagree_pct;
+      const hasVoted = debate.user_vote !== null;
+
+      return `
+        <article class="debate-card" data-id="${debate.id}" data-status="${debate.status}">
+          <p class="time">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            ${escapeHTML(debate.timer)}
+          </p>
+
+          <h2>${escapeHTML(debate.title)}</h2>
+
+          <div class="votes">
+            <button class="agree ${debate.user_vote === "agree" ? "selected-vote" : ""}" data-vote="agree" ${!debate.is_active || hasVoted ? "disabled" : ""}>
+              <p>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  <path d="M7 10v11"/>
+                  <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
                 </svg>
-                <span class="comment-count">${debate.comments}</span> Comments
-              </button>
-  
-              <div class="card-tags">
-                ${debate.tags.map(tag => `
-                  <span class="card-tag">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82Z"/>
-                      <circle cx="7.5" cy="7.5" r=".5"/>
-                    </svg>
-                    ${tag}
-                  </span>
-                `).join("")}
-              </div>
+                Agree
+              </p>
+              <strong>${formatNumber(debate.agree)}</strong>
+              <div>${agreePercent}%</div>
+            </button>
+
+            <button class="disagree ${debate.user_vote === "disagree" ? "selected-vote" : ""}" data-vote="disagree" ${!debate.is_active || hasVoted ? "disabled" : ""}>
+              <p>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 14V3"/>
+                  <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"/>
+                </svg>
+                Disagree
+              </p>
+              <strong>${formatNumber(debate.disagree)}</strong>
+              <div>${disagreePercent}%</div>
+            </button>
+          </div>
+
+          <div class="progress-bar">
+            <div class="agree-bar" style="width: ${agreePercent}%"></div>
+            <div class="disagree-bar" style="width: ${disagreePercent}%"></div>
+          </div>
+
+          <div class="card-footer">
+            <a class="comments-btn" href="${debate.url}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span class="comment-count">${formatNumber(debate.comments)}</span> Comments
+            </a>
+
+            <div class="card-tags">
+              ${debate.tags.map(tag => `
+                <span class="card-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82Z"/>
+                    <circle cx="7.5" cy="7.5" r=".5"/>
+                  </svg>
+                  ${escapeHTML(tag)}
+                </span>
+              `).join("")}
             </div>
-  
-            <section class="comments-section hidden">
-              <div class="comment-form">
-                <textarea maxlength="300" placeholder="Add a comment..."></textarea>
-                <button class="post-btn">Post</button>
-              </div>
-            </section>
-          </article>
-        `;
-      }).join("");
-    }
-  
-    filterButtons.forEach(button => {
-      button.addEventListener("click", () => {
-        filterButtons.forEach(btn => btn.classList.remove("active"));
-        button.classList.add("active");
-  
-        const filter = button.dataset.filter || button.textContent.trim().toLowerCase();
-        renderDebates(filter);
-      });
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  async function castVote(debateId, side) {
+    const debate = debates.find(item => item.id === debateId);
+    if (!debate || !debate.is_active || debate.user_vote) return;
+
+    const formData = new FormData();
+    formData.append("vote_type", side);
+
+    const response = await fetch(`/debates/${debateId}/vote`, {
+      method: "POST",
+      headers: { "X-CSRFToken": csrfToken },
+      body: formData,
     });
-  
-    renderDebates("all");
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      alert(data.error || "Vote failed. Please try again.");
+      return;
+    }
+
+    debate[side] += 1;
+    debate.total_votes += 1;
+    debate.user_vote = side;
+    debate.agree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.agree / debate.total_votes) * 1000) / 10;
+    debate.disagree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.disagree / debate.total_votes) * 1000) / 10;
+    renderDebates();
+    loadDashboardStats().catch(() => {});
+  }
+
+  filterButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      filterButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      currentFilter = button.dataset.filter || "all";
+      renderDebates();
+    });
   });
+
+  debateContainer.addEventListener("click", event => {
+    const voteButton = event.target.closest("[data-vote]");
+    if (!voteButton) return;
+
+    const card = voteButton.closest(".debate-card");
+    castVote(Number(card.dataset.id), voteButton.dataset.vote);
+  });
+
+  Promise.all([loadDashboardStats(), loadDebates()]).catch(() => {
+    debateContainer.innerHTML = `<p class="empty-state">Unable to load dashboard data. Please try again.</p>`;
+  });
+});
