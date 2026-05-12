@@ -1,53 +1,38 @@
 const isGuest = document.body.dataset.guest === 'true';
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-const DEBATES = [
-  {
-    id: 1,
-    prompt: 'Universal basic income should be implemented globally',
-    timer: 'Ends in about 12 hours',
-    agree: 723,
-    disagree: 556,
-    comments: [],
-    tags: ['politics', 'economics'],
-    voted: null,
-  },
-  {
-    id: 2,
-    prompt: 'Artificial Intelligence will create more jobs than it destroys',
-    timer: 'Ends in about 18 hours',
-    agree: 445,
-    disagree: 678,
-    comments: [],
-    tags: ['technology', 'work'],
-    voted: null,
-  },
-  {
-    id: 3,
-    prompt: 'Climate change is the most pressing issue of our time',
-    timer: 'Ends in 1 day',
-    agree: 892,
-    disagree: 234,
-    comments: [],
-    tags: ['politics', 'environment'],
-    voted: null,
-  },
-];
-
-const ALL_TAGS = ['politics', 'economics', 'technology', 'work', 'environment'];
-
+let debates = [];
+let categories = [];
 const activeFilters = new Set();
-let searchQuery = '';
+let searchQuery = new URLSearchParams(window.location.search).get('q') || '';
+let searchTimer = null;
 
 const filterTags = document.getElementById('filter-tags');
 const searchInput = document.getElementById('search-input');
 const debatesList = document.getElementById('debates-list');
 const emptyState = document.getElementById('empty-state');
 
+if (searchInput) {
+  searchInput.value = searchQuery;
+}
+
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function showLoginPopup(message) {
   const popup = document.getElementById('login-popup');
   const messageBox = document.getElementById('login-popup-message');
 
-  if (!popup || !messageBox) return;
+  if (!popup || !messageBox) {
+    window.location.href = '/login';
+    return;
+  }
 
   messageBox.textContent = message;
   popup.classList.remove('hidden');
@@ -59,22 +44,30 @@ function closeLoginPopup() {
 }
 
 function renderFilterTags() {
+  if (!filterTags) return;
+
   filterTags.innerHTML = '';
 
-  ALL_TAGS.forEach(tag => {
+  categories.forEach(tag => {
     const button = document.createElement('button');
-    button.className = 'filter-tag';
-    button.textContent = tag;
+    button.className = `filter-tag ${activeFilters.has(tag) ? 'active' : ''}`;
+    button.dataset.tag = tag;
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
+      ${escapeHTML(tag)}
+    `;
 
     button.addEventListener('click', () => {
       if (activeFilters.has(tag)) {
         activeFilters.delete(tag);
-        button.classList.remove('active');
       } else {
         activeFilters.add(tag);
-        button.classList.add('active');
       }
 
+      renderFilterTags();
       renderDebates();
     });
 
@@ -83,22 +76,14 @@ function renderFilterTags() {
 }
 
 function getFilteredDebates() {
-  return DEBATES.filter(debate => {
-    const matchesSearch =
-      searchQuery === '' ||
-      debate.prompt.toLowerCase().includes(searchQuery);
-
-    const matchesTags =
-      activeFilters.size === 0 ||
-      debate.tags.some(tag => activeFilters.has(tag));
-
-    return matchesSearch && matchesTags;
-  });
+  if (activeFilters.size === 0) return debates;
+  return debates.filter(debate => debate.tags.some(tag => activeFilters.has(tag)));
 }
 
 function renderDebates() {
-  const filteredDebates = getFilteredDebates();
+  if (!debatesList || !emptyState) return;
 
+  const filteredDebates = getFilteredDebates();
   debatesList.innerHTML = '';
 
   if (filteredDebates.length === 0) {
@@ -108,34 +93,45 @@ function renderDebates() {
 
   emptyState.style.display = 'none';
 
-  filteredDebates.forEach(debate => {
-    debatesList.appendChild(createDebateCard(debate));
+  filteredDebates.forEach((debate, index) => {
+    debatesList.appendChild(createDebateCard(debate, index));
   });
 }
 
-function createDebateCard(debate) {
-  const totalVotes = debate.agree + debate.disagree;
-  const agreePercent =
-    totalVotes === 0 ? 50 : Math.round((debate.agree / totalVotes) * 100);
-  const disagreePercent = 100 - agreePercent;
+function createDebateCard(debate, index) {
+  const agreePercent = debate.total_votes === 0 ? 0 : debate.agree_pct;
+  const disagreePercent = debate.total_votes === 0 ? 0 : debate.disagree_pct;
+  const hasVoted = debate.user_vote !== null;
 
   const card = document.createElement('article');
   card.className = 'debate-card';
   card.dataset.id = debate.id;
+  card.style.animationDelay = `${index * 60}ms`;
 
   card.innerHTML = `
-    <div class="card-timer">${debate.timer}</div>
+    <button class="star-btn ${debate.saved ? 'saved' : ''}" data-action="bookmark" title="${debate.saved ? 'Unsave' : 'Save debate'}">
+      <svg viewBox="0 0 24 24" fill="${debate.saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    </button>
 
-    <h3 class="card-prompt">${debate.prompt}</h3>
+    <div class="card-timer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      ${escapeHTML(debate.timer)}
+    </div>
+
+    <div class="card-prompt">${escapeHTML(debate.title)}</div>
 
     <div class="vote-row">
-      <button class="vote-btn agree ${debate.voted === 'agree' ? 'voted' : ''}" data-vote="agree">
+      <button class="vote-btn agree ${debate.user_vote === 'agree' ? 'voted' : ''}" data-vote="agree" ${!debate.is_active || hasVoted ? 'disabled' : ''}>
         <div class="vote-label">Agree</div>
         <div class="vote-count">${debate.agree.toLocaleString()}</div>
         <div class="vote-pct">${agreePercent}%</div>
       </button>
 
-      <button class="vote-btn disagree ${debate.voted === 'disagree' ? 'voted' : ''}" data-vote="disagree">
+      <button class="vote-btn disagree ${debate.user_vote === 'disagree' ? 'voted' : ''}" data-vote="disagree" ${!debate.is_active || hasVoted ? 'disabled' : ''}>
         <div class="vote-label">Disagree</div>
         <div class="vote-count">${debate.disagree.toLocaleString()}</div>
         <div class="vote-pct">${disagreePercent}%</div>
@@ -147,150 +143,144 @@ function createDebateCard(debate) {
     </div>
 
     <div class="card-footer">
-      <button class="comment-link comments-toggle">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+      <a href="${debate.url}" class="comment-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-
-        <span class="comment-count">${debate.comments.length}</span>
+        <span>${debate.comments}</span>
         <span>Comments</span>
-      </button>
+      </a>
 
       <div class="card-tags">
         ${debate.tags.map(tag => `
-          <span class="debate-tag">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+          <span class="card-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82z"></path>
               <line x1="7" y1="7" x2="7.01" y2="7"></line>
             </svg>
-
-            ${tag}
+            ${escapeHTML(tag)}
           </span>
         `).join('')}
       </div>
     </div>
-
-    <div class="comments-section hidden">
-      <div class="comments-list">
-        ${debate.comments.length === 0 ? '<p class="no-comments">No comments yet.</p>' : ''}
-        ${debate.comments.map(comment => `
-          <div class="comment ${comment.stance}">
-            <strong>${comment.stance}</strong>: ${comment.text}
-          </div>
-        `).join('')}
-      </div>
-
-      <form class="comment-form">
-        <textarea
-          class="comment-input"
-          maxlength="250"
-          placeholder="Write a comment..."
-        ></textarea>
-        <button type="submit">Post</button>
-      </form>
-    </div>
   `;
+
+  card.addEventListener('click', event => {
+    if (!event.target.closest('button') && !event.target.closest('a')) {
+      window.location.href = debate.url;
+    }
+  });
 
   return card;
 }
 
-function handleVote(card, side) {
+async function loadDebates() {
+  const params = new URLSearchParams();
+  if (searchQuery) params.set('q', searchQuery);
+
+  const response = await fetch(`/api/debates?${params.toString()}`);
+  if (!response.ok) throw new Error('Could not load debates');
+
+  const data = await response.json();
+  debates = data.debates || [];
+  categories = data.categories || [];
+
+  renderFilterTags();
+  renderDebates();
+}
+
+async function vote(debateId, side) {
+  const debate = debates.find(item => item.id === debateId);
+  if (!debate || !debate.is_active || debate.user_vote) return;
+
   if (isGuest) {
     showLoginPopup('You need to log in to vote on this debate.');
     return;
   }
 
-  const debateId = Number(card.dataset.id);
-  const debate = DEBATES.find(item => item.id === debateId);
+  const formData = new FormData();
+  formData.append('vote_type', side);
 
-  if (!debate || debate.voted === side) return;
+  const response = await fetch(`/debates/${debateId}/vote`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken },
+    body: formData,
+  });
+  const data = await response.json();
 
-  if (debate.voted === 'agree') debate.agree--;
-  if (debate.voted === 'disagree') debate.disagree--;
-
-  debate[side]++;
-  debate.voted = side;
-
-  renderDebates();
-}
-
-function handleCommentSubmit(form) {
-  if (isGuest) {
-    showLoginPopup('You need to log in to comment on this debate.');
+  if (!response.ok || data.error) {
+    alert(data.error || 'Vote failed. Please try again.');
     return;
   }
 
-  const card = form.closest('.debate-card');
-  const debateId = Number(card.dataset.id);
-  const debate = DEBATES.find(item => item.id === debateId);
-  const input = form.querySelector('.comment-input');
+  debate[side] += 1;
+  debate.total_votes += 1;
+  debate.user_vote = side;
+  debate.agree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.agree / debate.total_votes) * 1000) / 10;
+  debate.disagree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.disagree / debate.total_votes) * 1000) / 10;
+  renderDebates();
+}
 
-  if (!debate || input.value.trim() === '') return;
+async function toggleBookmark(debateId) {
+  if (isGuest) {
+    showLoginPopup('You need to log in to save debates.');
+    return;
+  }
 
-  debate.comments.push({
-    text: input.value.trim(),
-    stance: debate.voted || 'neutral',
+  const debate = debates.find(item => item.id === debateId);
+  if (!debate) return;
+
+  const response = await fetch(`/debates/${debateId}/bookmark`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken },
   });
+  const data = await response.json();
 
-  input.value = '';
+  if (!response.ok) {
+    alert(data.error || 'Save failed. Please try again.');
+    return;
+  }
+
+  debate.saved = data.bookmarked;
   renderDebates();
 }
 
 document.addEventListener('click', event => {
   const voteBtn = event.target.closest('.vote-btn');
-  const commentsToggle = event.target.closest('.comments-toggle');
+  const bookmarkBtn = event.target.closest('[data-action="bookmark"]');
   const closePopup = event.target.closest('#close-popup');
   const popupBackground = event.target.id === 'login-popup';
 
   if (voteBtn) {
     const card = voteBtn.closest('.debate-card');
-    handleVote(card, voteBtn.dataset.vote);
+    vote(Number(card.dataset.id), voteBtn.dataset.vote);
   }
 
-  if (commentsToggle) {
-    if (isGuest) {
-      showLoginPopup('You need to log in to comment on this debate.');
-      return;
+  if (bookmarkBtn) {
+    const card = bookmarkBtn.closest('.debate-card');
+    toggleBookmark(Number(card.dataset.id));
   }
-
-  const card = commentsToggle.closest('.debate-card');
-  card.querySelector('.comments-section').classList.toggle('hidden');
-}
 
   if (closePopup || popupBackground) {
     closeLoginPopup();
   }
 });
 
-document.addEventListener('submit', event => {
-  const form = event.target.closest('.comment-form');
-
-  if (form) {
-    event.preventDefault();
-    handleCommentSubmit(form);
-  }
+searchInput?.addEventListener('input', event => {
+  searchQuery = event.target.value.trim();
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    loadDebates().catch(() => {
+      debatesList.innerHTML = '';
+      emptyState.textContent = 'Unable to load debates. Please try again.';
+      emptyState.style.display = 'block';
+    });
+  }, 250);
 });
 
-searchInput.addEventListener('input', event => {
-  searchQuery = event.target.value.toLowerCase().trim();
-  renderDebates();
+loadDebates().catch(() => {
+  if (!debatesList || !emptyState) return;
+  debatesList.innerHTML = '';
+  emptyState.textContent = 'Unable to load debates. Please try again.';
+  emptyState.style.display = 'block';
 });
-
-renderFilterTags();
-renderDebates();
