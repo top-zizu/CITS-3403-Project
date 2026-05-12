@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from sqlalchemy import or_
 from models import db, User, Debate, Comment, Vote, Bookmark, Notification, DebateAccess
 from forms import SignupForm, LoginForm, ForgotPasswordForm
 from debates import debates_bp
@@ -35,6 +36,156 @@ def homepage():
 @app.route('/explore')
 def explore():
     return render_template('explore.html')
+
+
+def _ensure_utc(value):
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _time_until(expires_at):
+    expires_at = _ensure_utc(expires_at)
+    now = datetime.now(timezone.utc)
+    if expires_at <= now:
+        return "Ended"
+
+    remaining = expires_at - now
+    days = remaining.days
+    hours = remaining.seconds // 3600
+    minutes = (remaining.seconds % 3600) // 60
+
+    if days > 1:
+        return f"Ends in {days} days"
+    if days == 1:
+        return "Ends in 1 day"
+    if hours > 1:
+        return f"Ends in {hours} hours"
+    if hours == 1:
+        return "Ends in 1 hour"
+    if minutes > 1:
+        return f"Ends in {minutes} minutes"
+    return "Ends soon"
+
+
+def _can_list_debate(debate):
+    if not debate.is_private:
+        return True
+    if not current_user.is_authenticated:
+        return False
+    if debate.user_id == current_user.id:
+        return True
+    return DebateAccess.query.filter_by(
+        debate_id=debate.id,
+        user_id=current_user.id,
+    ).first() is not None
+
+
+def _debate_to_dict(debate):
+    total = debate.total_votes
+    agree_pct = round((debate.agree_votes / total) * 100, 1) if total else 0
+    disagree_pct = round((debate.disagree_votes / total) * 100, 1) if total else 0
+
+    user_vote = None
+    is_bookmarked = False
+    if current_user.is_authenticated:
+        vote = Vote.query.filter_by(
+            user_id=current_user.id,
+            debate_id=debate.id,
+        ).first()
+        user_vote = vote.vote_type if vote else None
+        is_bookmarked = Bookmark.query.filter_by(
+            user_id=current_user.id,
+            debate_id=debate.id,
+        ).first() is not None
+
+    return {
+        "id": debate.id,
+        "title": debate.title,
+        "description": debate.description,
+        "category": debate.category,
+        "tags": [debate.category] if debate.category else [],
+        "author": debate.display_author,
+        "agree": debate.agree_votes,
+        "disagree": debate.disagree_votes,
+        "total_votes": total,
+        "agree_pct": agree_pct,
+        "disagree_pct": disagree_pct,
+        "comments": Comment.query.filter_by(debate_id=debate.id).count(),
+        "is_active": debate.is_active,
+        "is_private": debate.is_private,
+        "status": "active" if debate.is_active else "ended",
+        "timer": _time_until(debate.expires_at),
+        "user_vote": user_vote,
+        "saved": is_bookmarked,
+        "url": url_for("debate_detail", debate_id=debate.id),
+        "created_at": _ensure_utc(debate.created_at).isoformat(),
+        "expires_at": _ensure_utc(debate.expires_at).isoformat(),
+    }
+
+
+@app.route("/api/debates")
+def api_debates():
+    query_text = request.args.get("q", "").strip()
+    category = request.args.get("category", "").strip()
+    status = request.args.get("status", "").strip()
+    sort = request.args.get("sort", "newest").strip()
+
+    debates = Debate.query
+
+    if query_text:
+        debates = debates.filter(
+            or_(
+                Debate.title.ilike(f"%{query_text}%"),
+                Debate.description.ilike(f"%{query_text}%"),
+            )
+        )
+
+    if category:
+        debates = debates.filter(Debate.category == category)
+
+    now = datetime.utcnow()
+    if status == "active":
+        debates = debates.filter(Debate.expires_at > now, Debate.is_closed == False)
+    elif status in ("closed", "ended"):
+        debates = debates.filter(
+            or_(Debate.expires_at <= now, Debate.is_closed == True)
+        )
+
+    if sort == "votes":
+        debates = debates.order_by((Debate.agree_votes + Debate.disagree_votes).desc())
+    elif sort == "ending":
+        debates = debates.filter(Debate.expires_at > now).order_by(Debate.expires_at.asc())
+    else:
+        debates = debates.order_by(Debate.created_at.desc())
+
+    debates = [debate for debate in debates.limit(100).all() if _can_list_debate(debate)]
+    categories = sorted({debate.category for debate in debates if debate.category})
+
+    return jsonify({
+        "debates": [_debate_to_dict(debate) for debate in debates],
+        "categories": categories,
+    })
+
+
+@app.route("/api/dashboard")
+@login_required
+def api_dashboard():
+    debate_count = Debate.query.filter_by(user_id=current_user.id).count()
+    comment_count = Comment.query.filter_by(user_id=current_user.id).count()
+    total_results = current_user.debates_won + current_user.debates_lost
+    win_rate = round((current_user.debates_won / total_results) * 100) if total_results else 0
+
+    return jsonify({
+        "stats": {
+            "points": current_user.reputation_score,
+            "debates": debate_count,
+            "comments": comment_count,
+            "win_rate": win_rate,
+        }
+    })
 
 
 # ── Auth ──────────────────────────────────────────────────────────
@@ -103,43 +254,12 @@ def home():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    debates = Debate.query.order_by(Debate.created_at.desc()).all()
-    return render_template("dashboard.html", debates=debates)
+    return render_template("dashboard.html")
 
 
 @app.route("/search")
 def search():
-    query    = request.args.get("q", "").strip()
-    category = request.args.get("category", "").strip()
-    status   = request.args.get("status", "").strip()
-    sort     = request.args.get("sort", "newest").strip()
-
-    debates = Debate.query
-    if query:
-        debates = debates.filter(
-            (Debate.title.ilike(f"%{query}%")) |
-            (Debate.description.ilike(f"%{query}%"))
-        )
-    if category:
-        debates = debates.filter(Debate.category == category)
-
-    now = datetime.utcnow()
-    if status == "active":
-        debates = debates.filter(Debate.expires_at > now, Debate.is_closed == False)
-    elif status == "closed":
-        debates = debates.filter(
-            (Debate.expires_at <= now) | (Debate.is_closed == True)
-        )
-    if sort == "votes":
-        debates = debates.order_by(
-            (Debate.agree_votes + Debate.disagree_votes).desc()
-        )
-    elif sort == "ending":
-        debates = debates.filter(Debate.expires_at > now).order_by(Debate.expires_at.asc())
-    else:
-        debates = debates.order_by(Debate.created_at.desc())
-
-    return render_template("searchdebates.html", debates=debates.all(), query=query)
+    return render_template("searchdebates.html")
 
 
 # ── Debate detail ─────────────────────────────────────────────────
