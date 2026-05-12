@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Dashboard | DebateHub</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='style_dashboard.css') }}">
@@ -10,7 +11,6 @@
 
   <script src="{{ url_for('static', filename='main.js') }}" defer></script>
   <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
   <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
 </head>
 
@@ -31,22 +31,22 @@
     <section class="dashboard-stats">
       <div class="stat-card">
         <span>Points</span>
-        <strong>1,247</strong>
+        <strong id="stat-points">0</strong>
       </div>
 
       <div class="stat-card">
         <span>Debates</span>
-        <strong>42</strong>
+        <strong id="stat-debates">0</strong>
       </div>
 
       <div class="stat-card">
         <span>Comments</span>
-        <strong>87</strong>
+        <strong id="stat-comments">0</strong>
       </div>
 
       <div class="stat-card">
         <span>Win Rate</span>
-        <strong>68%</strong>
+        <strong id="stat-win-rate">0%</strong>
       </div>
     </section>
 
