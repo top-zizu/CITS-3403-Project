@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <title>Explore Debates - DebateHub</title>
 
@@ -42,7 +43,7 @@
   ></script>
 </head>
 
-<body data-guest="true">
+<body data-guest="{{ 'false' if current_user.is_authenticated else 'true' }}">
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg px-5 py-3">
