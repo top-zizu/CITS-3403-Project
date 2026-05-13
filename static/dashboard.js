@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const debateContainer = document.querySelector(".debates");
   let debates = [];
   let currentFilter = "all";
+  let searchQuery = "";
 
   if (!debateContainer) return;
 
@@ -47,14 +48,31 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDebates();
   }
 
+  function highlight(text, query) {
+    if (!query) return escapeHTML(text);
+    const escaped = escapeHTML(text);
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return escaped.replace(new RegExp(`(${escapedQuery})`, "gi"), '<mark class="search-highlight">$1</mark>');
+  }
+
   function renderDebates() {
-    const filtered =
-      currentFilter === "all"
-        ? debates
-        : debates.filter(debate => debate.status === currentFilter);
+    const query = searchQuery.trim().toLowerCase();
+
+    let filtered = currentFilter === "all"
+      ? debates
+      : debates.filter(debate => debate.status === currentFilter);
+
+    if (query) {
+      filtered = filtered.filter(debate =>
+        debate.title.toLowerCase().includes(query) ||
+        (debate.tags || []).some(tag => tag.toLowerCase().includes(query))
+      );
+    }
 
     if (filtered.length === 0) {
-      debateContainer.innerHTML = `<p class="empty-state">No debates to show.</p>`;
+      debateContainer.innerHTML = query
+        ? `<p class="empty-state">No debates match "<strong>${escapeHTML(query)}</strong>".</p>`
+        : `<p class="empty-state">No debates to show.</p>`;
       return;
     }
 
@@ -64,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const hasVoted = debate.user_vote !== null;
 
       return `
-        <article class="debate-card" data-id="${debate.id}" data-status="${debate.status}">
+        <article class="debate-card" data-id="${debate.id}" data-status="${debate.status}" style="cursor: pointer;">
           <button class="save-btn ${debate.saved ? "saved" : ""}" data-action="bookmark" title="${debate.saved ? "Unsave debate" : "Save debate"}">
             <svg viewBox="0 0 24 24" fill="${debate.saved ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
@@ -80,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ${escapeHTML(debate.timer)}
           </p>
 
-          <h2>${escapeHTML(debate.title)}</h2>
+          <h2>${highlight(debate.title, searchQuery.trim())}</h2>
 
           <div class="votes">
             <button class="agree ${debate.user_vote === "agree" ? "selected-vote" : ""}" data-vote="agree" ${!debate.is_active || hasVoted ? "disabled" : ""}>
@@ -202,17 +220,38 @@ document.addEventListener("DOMContentLoaded", () => {
   debateContainer.addEventListener("click", event => {
     const bookmarkButton = event.target.closest('[data-action="bookmark"]');
     if (bookmarkButton) {
+      event.stopPropagation(); // Prevents the card click from firing
       const card = bookmarkButton.closest(".debate-card");
       toggleBookmark(Number(card.dataset.id));
       return;
     }
 
     const voteButton = event.target.closest("[data-vote]");
-    if (!voteButton) return;
+    if (voteButton) {
+      event.stopPropagation(); // Prevents the card click from firing
+      const card = voteButton.closest(".debate-card");
+      castVote(Number(card.dataset.id), voteButton.dataset.vote);
+      return;
+    }
 
-    const card = voteButton.closest(".debate-card");
-    castVote(Number(card.dataset.id), voteButton.dataset.vote);
+    const card = event.target.closest(".debate-card");
+    if (card) {
+      const debateId = Number(card.dataset.id);
+      const debate = debates.find(d => d.id === debateId);
+      if (debate && debate.url) {
+        window.location.href = debate.url;
+      }
+    }
   });
+
+  const searchInput = document.getElementById("debate-search");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      searchQuery = searchInput.value;
+      renderDebates();
+    });
+  }
 
   Promise.all([loadDashboardStats(), loadDebates()]).catch(() => {
     debateContainer.innerHTML = `<p class="empty-state">Unable to load dashboard data. Please try again.</p>`;

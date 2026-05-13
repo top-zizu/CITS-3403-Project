@@ -24,18 +24,6 @@
       <p>Manage your account preferences and privacy</p>
     </div>
 
-    <!-- Flash messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}" role="alert"
-               style="margin-bottom:16px; padding:12px 16px; border-radius:8px;">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
     <!-- ── Profile Settings ─────────────────────────────────── -->
     <form method="POST" action="/settings" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

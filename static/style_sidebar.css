@@ -1,9 +1,10 @@
 .dh-sidebar {
   position: fixed;
-  top: var(--nav-h);
+  top: 0;
   left: 0;
   width: 260px;
-  height: calc(100vh - var(--nav-h));
+  height: 100vh;
+  padding-top: calc(var(--nav-h) + 16px);
   background: var(--surface);
   border-right: 1px solid var(--border);
   padding: 16px 14px;
@@ -213,3 +214,24 @@ body.dark-mode .dh-sidebar::-webkit-scrollbar-thumb:hover {
   background-clip: padding-box;
 }
 
+/* Container for the icon and the dot */
+.sidebar-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The Blue Dot */
+.sidebar-unread-dot {
+  display: none; /* Hidden by default, JS will show it */
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  background-color: #2563eb; /* Bright Blue */
+  border-radius: 50%;
+  border: 2px solid var(--surface); /* Creates a clean gap around the dot */
+  z-index: 10;
+}

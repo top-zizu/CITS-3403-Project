@@ -405,91 +405,6 @@ body.sidebar-collapsed .debates {
   margin-right: auto;
 }
 
-/* ── DARK MODE ─────────────────────────────────────────── */
-
-body.dark-mode .stat-card,
-body.dark-mode .debate-card,
-body.dark-mode .filters button {
-  background: #111827;
-  border-color: #1f2937;
-  color: #f9fafb;
-}
-
-body.dark-mode .dashboard-header p,
-body.dark-mode .stat-card span,
-body.dark-mode .time,
-body.dark-mode .agree div,
-body.dark-mode .disagree div {
-  color: #9ca3af;
-}
-
-body.dark-mode .stat-card strong,
-body.dark-mode .debate-card h2 {
-  color: #f9fafb;
-}
-
-body.dark-mode .filters button:hover {
-  background: #1f2937;
-  color: #60a5fa;
-}
-
-body.dark-mode .filters button.active,
-body.dark-mode .filters .active {
-  background: #2563eb;
-  color: white;
-}
-
-body.dark-mode .agree {
-  background: rgba(37, 99, 235, 0.16);
-  border-color: rgba(96, 165, 250, 0.35);
-}
-
-body.dark-mode .disagree {
-  background: rgba(220, 38, 38, 0.16);
-  border-color: rgba(248, 113, 113, 0.35);
-}
-body.dark-mode .progress-bar {
-  background: #374151;
-}
-
-body.dark-mode .comments-btn {
-  border-top-color: #374151;
-  color: #e5e7eb;
-}
-
-body.dark-mode .comments-btn:hover {
-  color: #60a5fa;
-}
-
-body.dark-mode .comments-section {
-  background: #0f172a;
-  border-top-color: #374151;
-}
-
-body.dark-mode .comment-form input,
-body.dark-mode .comment-form textarea {
-  background: #111827;
-  color: #f9fafb;
-  border-color: #374151;
-}
-
-body.dark-mode .comment-form input::placeholder,
-body.dark-mode .comment-form textarea::placeholder {
-  color: #9ca3af;
-}
-
-body.dark-mode .blue-comment {
-  background: rgba(37, 99, 235, 0.12);
-}
-
-body.dark-mode .red-comment {
-  background: rgba(220, 38, 38, 0.12);
-}
-
-body.dark-mode .neutral-comment {
-  background: rgba(124, 58, 237, 0.14);
-}
-
 /* ── RESPONSIVE ────────────────────────────────────────── */
 
 @media (max-width: 900px) {
@@ -594,8 +509,9 @@ body.dark-mode .neutral-comment {
   height: 11px;
 }
 
-body.dark-mode .card-tag {
-  background: #1f2937;
-  border-color: #374151;
-  color: #9ca3af;
+.search-highlight {
+  background: var(--accent, #2563eb);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0 1px;
 }
