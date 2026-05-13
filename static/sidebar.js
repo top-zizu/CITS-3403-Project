@@ -74,14 +74,16 @@ document.addEventListener("DOMContentLoaded", () => {
         </a>
 
         <a href="/notifications" class="sidebar-link">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
+          <div class="sidebar-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <div id="sidebar-notification-dot" class="sidebar-unread-dot" style="display: none;"></div>
+          </div>
           <span>Notifications</span>
         </a>
-
       </div>
 
       <div class="sidebar-divider"></div>
@@ -197,4 +199,26 @@ document.addEventListener("DOMContentLoaded", () => {
       link.classList.add("active");
   }
 });
+
+  async function checkUnreadNotifications() {
+    try {
+      const response = await fetch('/api/notifications/unread-count'); // Adjust this URL to your actual endpoint
+      const data = await response.json();
+      
+      const dot = document.getElementById("sidebar-notification-dot");
+      if (dot && data.unread_count > 0) {
+        dot.style.display = "block";
+      } else if (dot) {
+        dot.style.display = "none";
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread notifications", err);
+    }
+  }
+
+  // Initial check
+  checkUnreadNotifications();
+
+  // Optional: Check every 60 seconds
+  setInterval(checkUnreadNotifications, 60000);
 });
