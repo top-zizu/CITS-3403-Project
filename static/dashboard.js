@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const hasVoted = debate.user_vote !== null;
 
       return `
-        <article class="debate-card" data-id="${debate.id}" data-status="${debate.status}">
+        <article class="debate-card" data-id="${debate.id}" data-status="${debate.status}" style="cursor: pointer;">
           <button class="save-btn ${debate.saved ? "saved" : ""}" data-action="bookmark" title="${debate.saved ? "Unsave debate" : "Save debate"}">
             <svg viewBox="0 0 24 24" fill="${debate.saved ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
@@ -220,16 +220,28 @@ document.addEventListener("DOMContentLoaded", () => {
   debateContainer.addEventListener("click", event => {
     const bookmarkButton = event.target.closest('[data-action="bookmark"]');
     if (bookmarkButton) {
+      event.stopPropagation(); // Prevents the card click from firing
       const card = bookmarkButton.closest(".debate-card");
       toggleBookmark(Number(card.dataset.id));
       return;
     }
 
     const voteButton = event.target.closest("[data-vote]");
-    if (!voteButton) return;
+    if (voteButton) {
+      event.stopPropagation(); // Prevents the card click from firing
+      const card = voteButton.closest(".debate-card");
+      castVote(Number(card.dataset.id), voteButton.dataset.vote);
+      return;
+    }
 
-    const card = voteButton.closest(".debate-card");
-    castVote(Number(card.dataset.id), voteButton.dataset.vote);
+    const card = event.target.closest(".debate-card");
+    if (card) {
+      const debateId = Number(card.dataset.id);
+      const debate = debates.find(d => d.id === debateId);
+      if (debate && debate.url) {
+        window.location.href = debate.url;
+      }
+    }
   });
 
   const searchInput = document.getElementById("debate-search");
