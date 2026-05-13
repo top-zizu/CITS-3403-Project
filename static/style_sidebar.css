@@ -1,9 +1,10 @@
 .dh-sidebar {
   position: fixed;
-  top: var(--nav-h);
+  top: 0;
   left: 0;
   width: 260px;
-  height: calc(100vh - var(--nav-h));
+  height: 100vh;
+  padding-top: calc(var(--nav-h) + 16px);
   background: var(--surface);
   border-right: 1px solid var(--border);
   padding: 16px 14px;
