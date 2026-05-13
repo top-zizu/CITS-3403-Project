@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_searchdebates.css') }}">
 
   <script src="{{ url_for('static', filename='main.js') }}" defer></script>
   <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
@@ -22,33 +23,24 @@
     <section class="dashboard-header">
       <div>
         <h1>Your Dashboard</h1>
-        <p>Track your debates, votes, comments, and current activity.</p>
+        <p>Quickly search for any debates that you have interacted with.</p>
       </div>
 
       <a href="/debates/create" class="dashboard-create-btn">+ New Debate</a>
     </section>
 
-    <section class="dashboard-stats">
-      <div class="stat-card">
-        <span>Points</span>
-        <strong id="stat-points">0</strong>
-      </div>
-
-      <div class="stat-card">
-        <span>Debates</span>
-        <strong id="stat-debates">0</strong>
-      </div>
-
-      <div class="stat-card">
-        <span>Comments</span>
-        <strong id="stat-comments">0</strong>
-      </div>
-
-      <div class="stat-card">
-        <span>Win Rate</span>
-        <strong id="stat-win-rate">0%</strong>
-      </div>
-    </section>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        class="search-input"
+        type="search"
+        id="debate-search"
+        placeholder="Search your debates…"
+        autocomplete="off"
+      />
+    </div>
 
     <section class="filters">
       <button class="active" data-filter="all">All</button>

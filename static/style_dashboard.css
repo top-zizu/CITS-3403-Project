@@ -594,8 +594,9 @@ body.dark-mode .neutral-comment {
   height: 11px;
 }
 
-body.dark-mode .card-tag {
-  background: #1f2937;
-  border-color: #374151;
-  color: #9ca3af;
+.search-highlight {
+  background: var(--accent, #2563eb);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0 1px;
 }
