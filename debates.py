@@ -17,7 +17,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone, timedelta
 import secrets
-from models import db, Debate, Vote, Comment, CommentLike, Bookmark, DebateAccess
+from models import db, Debate, Vote, Comment, CommentLike, Bookmark, DebateAccess, Notification
 
 debates_bp = Blueprint('debates', __name__)
 
@@ -72,6 +72,20 @@ def close_debate(debate):
 
             if total > 0:
                 user.conformity_score = round(correct / total, 4)
+
+    # Notify all voters that the debate has closed
+    for vote in debate.votes:
+        if vote.user_id != debate.user_id:
+            result = debate.winner.capitalize() if debate.winner != 'draw' else 'a Draw'
+            outcome = 'won' if vote.vote_type == debate.winner else 'lost'
+            if debate.winner == 'draw':
+                outcome = 'drew'
+            db.session.add(Notification(
+                user_id=vote.user_id,
+                notification_type="debate_closed",
+                message=f"A debate you voted on has closed: \"{debate.title}\" — {result}. You {outcome}.",
+                link_url=url_for("debate_detail", debate_id=debate.id),
+            ))
 
     db.session.commit()
 
@@ -242,6 +256,18 @@ def post_comment(debate_id):
     current_user.reputation_score += 10
 
     db.session.add(comment)
+    db.session.flush()
+
+    # Notify the debate author if someone else comments on their debate
+    debate = db.get_or_404(Debate, debate_id)
+    if debate.user_id != current_user.id:
+        db.session.add(Notification(
+            user_id=debate.user_id,
+            notification_type="comment",
+            message=f"{current_user.username} commented on your debate: \"{debate.title}\"",
+            link_url=url_for("debate_detail", debate_id=debate_id),
+        ))
+
     db.session.commit()
 
     return jsonify({
@@ -273,6 +299,17 @@ def post_reply(comment_id):
     current_user.reputation_score += 10
 
     db.session.add(reply)
+    db.session.flush()
+
+    # Notify the parent comment author if someone else replies to them
+    if parent.user_id != current_user.id:
+        db.session.add(Notification(
+            user_id=parent.user_id,
+            notification_type="reply",
+            message=f"{current_user.username} replied to your comment on \"{parent.debate.title}\"",
+            link_url=url_for("debate_detail", debate_id=parent.debate_id),
+        ))
+
     db.session.commit()
 
     return jsonify({
