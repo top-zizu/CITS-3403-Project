@@ -192,7 +192,7 @@
     {
       id: {{ c.id }},
       author: {{ c.author.username | tojson }},
-      stance: 'neutral',
+      stance: {{ comment_stances.get(c.user_id, 'neutral') | tojson }},
       time: {{ c.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
       text: {{ c.content | tojson }},
       likes: {{ c.likes | length }},
@@ -202,7 +202,7 @@
         {
           id: {{ r.id }},
           author: {{ r.author.username | tojson }},
-          stance: 'neutral',
+          stance: {{ comment_stances.get(r.user_id, 'neutral') | tojson }},
           time: {{ r.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
           text: {{ r.content | tojson }},
           likes: {{ r.likes | length }},
@@ -297,7 +297,7 @@
       comments.unshift({
         id: data.comment_id,
         author: data.username,
-        stance,
+        stance: data.stance,
         time: data.created_at,
         text: data.content,
         likes: 0,
@@ -331,7 +331,7 @@
         parent.replies.push({
           id: data.comment_id,
           author: data.username,
-          stance,
+          stance: data.stance,
           time: data.created_at,
           text: data.content,
           likes: 0,

@@ -150,6 +150,52 @@ def _debate_to_dict(debate):
         "expires_at": _ensure_utc(debate.expires_at).isoformat(),
     }
 
+@app.route("/api/debates/<int:debate_id>/comments")
+def api_debate_comments(debate_id):
+    db.get_or_404(Debate, debate_id)
+    sort = request.args.get("sort", "newest")
+
+    if sort == "top":
+        top_level = (
+            Comment.query
+            .filter_by(debate_id=debate_id, parent_comment_id=None)
+            .all()
+        )
+        top_level.sort(key=lambda c: len(c.likes), reverse=True)
+    else:
+        top_level = (
+            Comment.query
+            .filter_by(debate_id=debate_id, parent_comment_id=None)
+            .order_by(Comment.created_at.asc())
+            .all()
+        )
+
+    all_author_ids = {c.user_id for c in top_level}
+    for c in top_level:
+        for r in c.replies:
+            all_author_ids.add(r.user_id)
+
+    votes_on_debate = Vote.query.filter_by(debate_id=debate_id).filter(
+        Vote.user_id.in_(all_author_ids)
+    ).all()
+    stance_map = {'agree': 'blue', 'disagree': 'red'}
+    comment_stances = {v.user_id: stance_map.get(v.vote_type, 'neutral') for v in votes_on_debate}
+
+    def comment_to_dict(c):
+        return {
+            "id": c.id,
+            "author": c.author.username,
+            "stance": comment_stances.get(c.user_id, 'neutral'),
+            "time": c.created_at.strftime('%d %b %Y, %H:%M'),
+            "text": c.content,
+            "likes": len(c.likes),
+            "replies": [comment_to_dict(r) for r in c.replies],
+        }
+
+    return jsonify({
+        "comments": [comment_to_dict(c) for c in top_level],
+        "sort": sort,
+    })
 
 @app.route("/api/debates")
 def api_debates():
@@ -353,12 +399,33 @@ def debate_detail(debate_id):
                 "winner": debate.winner,
             }
 
-    top_level_comments = (
-        Comment.query
-        .filter_by(debate_id=debate_id, parent_comment_id=None)
-        .order_by(Comment.created_at.asc())
-        .all()
-    )
+    sort = request.args.get('sort', 'newest')
+    if sort == 'top':
+        top_level_comments = (
+            Comment.query
+            .filter_by(debate_id=debate_id, parent_comment_id=None)
+            .all()
+        )
+        top_level_comments.sort(key=lambda c: len(c.likes), reverse=True)
+    else:
+        top_level_comments = (
+            Comment.query
+            .filter_by(debate_id=debate_id, parent_comment_id=None)
+            .order_by(Comment.created_at.asc())
+            .all()
+        )
+
+    # Build stance map: commenter user_id -> 'blue'|'red'|'neutral'
+    all_author_ids = {c.user_id for c in top_level_comments}
+    for c in top_level_comments:
+        for r in c.replies:
+            all_author_ids.add(r.user_id)
+
+    votes_on_debate = Vote.query.filter_by(debate_id=debate_id).filter(
+        Vote.user_id.in_(all_author_ids)
+    ).all()
+    stance_map = {'agree': 'blue', 'disagree': 'red'}
+    comment_stances = {v.user_id: stance_map.get(v.vote_type, 'neutral') for v in votes_on_debate}
 
     user_vote = None
     is_bookmarked = False
@@ -377,6 +444,7 @@ def debate_detail(debate_id):
         comments=top_level_comments,
         user_vote=user_vote,
         is_bookmarked=is_bookmarked,
+        comment_stances=comment_stances,
     )
 
 
