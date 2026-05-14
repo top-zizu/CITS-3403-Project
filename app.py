@@ -158,7 +158,16 @@ def api_debates():
     status = request.args.get("status", "").strip()
     sort = request.args.get("sort", "newest").strip()
 
+    filter_type = request.args.get("filter", "").strip()
+
     debates = Debate.query
+
+    if filter_type == "interacted" and current_user.is_authenticated:
+        voted_ids    = {v.debate_id for v in Vote.query.filter_by(user_id=current_user.id).all()}
+        commented_ids = {c.debate_id for c in Comment.query.filter_by(user_id=current_user.id).all()}
+        created_ids  = {d.id for d in Debate.query.filter_by(user_id=current_user.id).all()}
+        interacted_ids = voted_ids | commented_ids | created_ids
+        debates = debates.filter(Debate.id.in_(interacted_ids))
 
     if query_text:
         debates = debates.filter(
