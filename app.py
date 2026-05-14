@@ -286,7 +286,7 @@ def forgot_password():
 @app.route("/home")
 @login_required
 def home():
-    return render_template("home.html")
+    return render_template("home.html", username=current_user.username)
 
 
 @app.route("/dashboard")
@@ -596,6 +596,69 @@ def _social_user_to_dict(user):
         "is_mutual": is_following and follows_you,
     }
 
+
+@app.route("/api/activity/friends")
+@login_required
+def api_activity_friends():
+    following = current_user.following.all()
+    if not following:
+        return jsonify({"activities": []})
+
+    following_ids = [u.id for u in following]
+    following_map = {u.id: u.username for u in following}
+
+    activities = []
+
+    recent_votes = (
+        Vote.query
+        .filter(Vote.user_id.in_(following_ids))
+        .order_by(Vote.created_at.desc())
+        .limit(20).all()
+    )
+    for v in recent_votes:
+        activities.append({
+            "username": following_map[v.user_id],
+            "type": "vote",
+            "debate_title": v.debate.title,
+            "debate_url": url_for("debate_detail", debate_id=v.debate_id),
+            "created_at": v.created_at,
+        })
+
+    recent_comments = (
+        Comment.query
+        .filter(Comment.user_id.in_(following_ids))
+        .order_by(Comment.created_at.desc())
+        .limit(20).all()
+    )
+    for c in recent_comments:
+        activities.append({
+            "username": following_map[c.user_id],
+            "type": "comment",
+            "debate_title": c.debate.title,
+            "debate_url": url_for("debate_detail", debate_id=c.debate_id),
+            "created_at": c.created_at,
+        })
+
+    recent_debates = (
+        Debate.query
+        .filter(Debate.user_id.in_(following_ids))
+        .order_by(Debate.created_at.desc())
+        .limit(20).all()
+    )
+    for d in recent_debates:
+        activities.append({
+            "username": following_map[d.user_id],
+            "type": "create",
+            "debate_title": d.title,
+            "debate_url": url_for("debate_detail", debate_id=d.id),
+            "created_at": d.created_at,
+        })
+
+    activities.sort(key=lambda x: x["created_at"], reverse=True)
+    for a in activities:
+        del a["created_at"]
+
+    return jsonify({"activities": activities[:20]})
 
 @app.route("/api/friends")
 @login_required
