@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h2>${highlight(debate.title, searchQuery.trim())}</h2>
 
           <div class="votes">
-            <button class="agree ${debate.user_vote === "agree" ? "selected-vote" : ""}" data-vote="agree" ${!debate.is_active || hasVoted ? "disabled" : ""}>
+            <button class="agree ${debate.user_vote === "agree" ? "selected-vote" : ""}" data-vote="agree" ${!debate.is_active ? "disabled" : ""}>
               <p>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div>${agreePercent}%</div>
             </button>
 
-            <button class="disagree ${debate.user_vote === "disagree" ? "selected-vote" : ""}" data-vote="disagree" ${!debate.is_active || hasVoted ? "disabled" : ""}>
+            <button class="disagree ${debate.user_vote === "disagree" ? "selected-vote" : ""}" data-vote="disagree" ${!debate.is_active ? "disabled" : ""}>
               <p>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -162,7 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function castVote(debateId, side) {
     const debate = debates.find(item => item.id === debateId);
-    if (!debate || !debate.is_active || debate.user_vote) return;
+    if (!debate || !debate.is_active) return;
+    if (debate.user_vote === side) return;
 
     const formData = new FormData();
     formData.append("vote_type", side);
@@ -179,6 +180,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (data.changed) {
+      const oldSide = side === 'agree' ? 'disagree' : 'agree';
+      debate[oldSide] -= 1;
+      debate.total_votes -= 1;
+    }
     debate[side] += 1;
     debate.total_votes += 1;
     debate.user_vote = side;
