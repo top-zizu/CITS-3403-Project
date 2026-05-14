@@ -567,7 +567,20 @@ def notifications():
         .order_by(Notification.created_at.desc())
         .all()
     )
+    for n in user_notifications:
+        n.is_read = True
+    db.session.commit()
     return render_template("notifications.html", notifications=user_notifications)
+
+
+@app.route("/api/notifications/unread-count")
+@login_required
+def api_notifications_unread_count():
+    count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False,
+    ).count()
+    return jsonify({"count": count})
 
 
 @app.route("/friends")
