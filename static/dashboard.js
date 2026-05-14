@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadDebates() {
-    const response = await fetch("/api/debates?sort=newest");
+    const response = await fetch("/api/debates?sort=newest&filter=interacted");
     if (!response.ok) throw new Error("Could not load debates");
 
     const data = await response.json();
