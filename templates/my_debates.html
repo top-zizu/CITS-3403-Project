@@ -223,18 +223,37 @@
   function vote(id, side) {
     const debate = DEBATES.find(d => d.id === id);
     if (!debate) return;
-    if (debate.voted === side) { debate[side]--; debate.voted = null; }
-    else { if (debate.voted) debate[debate.voted]--; debate[side]++; debate.voted = side; }
-    const total     = debate.agree + debate.disagree;
-    const agreePct  = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
-    document.getElementById(`agree-count-${id}`).textContent    = debate.agree.toLocaleString();
-    document.getElementById(`disagree-count-${id}`).textContent = debate.disagree.toLocaleString();
-    document.getElementById(`agree-pct-${id}`).textContent      = `${agreePct}%`;
-    document.getElementById(`disagree-pct-${id}`).textContent   = `${(100 - agreePct).toFixed(1)}%`;
-    document.getElementById(`progress-${id}`).style.width       = `${agreePct}%`;
-    const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
-    card.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('voted'));
-    if (debate.voted) card.querySelector(`.vote-btn.${debate.voted}`).classList.add('voted');
+    if (debate.voted === side) return;
+
+    fetch(`/debates/${id}/vote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCsrf(),
+      },
+      body: `vote_type=${side}`,
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { alert(data.error); return; }
+      if (data.changed) {
+        const oldSide = side === 'agree' ? 'disagree' : 'agree';
+        debate[oldSide]--;
+      }
+      debate[side]++;
+      debate.voted = side;
+      const total    = debate.agree + debate.disagree;
+      const agreePct = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
+      document.getElementById(`agree-count-${id}`).textContent    = debate.agree.toLocaleString();
+      document.getElementById(`disagree-count-${id}`).textContent = debate.disagree.toLocaleString();
+      document.getElementById(`agree-pct-${id}`).textContent      = `${agreePct}%`;
+      document.getElementById(`disagree-pct-${id}`).textContent   = `${(100 - agreePct).toFixed(1)}%`;
+      document.getElementById(`progress-${id}`).style.width       = `${agreePct}%`;
+      const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
+      card.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('voted'));
+      card.querySelector(`.vote-btn.${side}`).classList.add('voted');
+    })
+    .catch(() => alert('Something went wrong. Please try again.'));
   }
 
   /* ── Delete ── */

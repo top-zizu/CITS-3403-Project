@@ -175,8 +175,26 @@ def cast_vote(debate_id):
     ).first()
 
     if existing:
-        return jsonify({'error': 'You have already voted on this debate.'}), 400
+        if existing.vote_type == vote_type:
+            return jsonify({'error': 'You have already voted this way on this debate.'}), 400
 
+        # Reverse the old counter, apply the new one
+        if existing.vote_type == 'agree':
+            debate.agree_votes -= 1
+        else:
+            debate.disagree_votes -= 1
+
+        if vote_type == 'agree':
+            debate.agree_votes += 1
+        else:
+            debate.disagree_votes += 1
+
+        existing.vote_type = vote_type
+        db.session.commit()
+
+        return jsonify({'success': True, 'changed': True, 'total': debate.total_votes})
+
+    # First-time vote
     vote = Vote(
         user_id=current_user.id,
         debate_id=debate_id,
@@ -197,7 +215,7 @@ def cast_vote(debate_id):
         db.session.rollback()
         return jsonify({'error': 'You have already voted on this debate.'}), 400
 
-    return jsonify({'success': True, 'total': debate.total_votes})
+    return jsonify({'success': True, 'changed': False, 'total': debate.total_votes})
 
 
 # ============================================================
