@@ -101,7 +101,7 @@ function renderDebates() {
 function createDebateCard(debate, index) {
   const agreePercent = debate.total_votes === 0 ? 0 : debate.agree_pct;
   const disagreePercent = debate.total_votes === 0 ? 0 : debate.disagree_pct;
-  const hasVoted = debate.user_vote !== null;
+  const showCounts = !debate.is_active;
 
   const card = document.createElement('article');
   card.className = 'debate-card';
@@ -125,21 +125,19 @@ function createDebateCard(debate, index) {
     <div class="card-prompt">${escapeHTML(debate.title)}</div>
 
     <div class="vote-row">
-      <button class="vote-btn agree ${debate.user_vote === 'agree' ? 'voted' : ''}" data-vote="agree" ${!debate.is_active || hasVoted ? 'disabled' : ''}>
+      <button class="vote-btn agree ${debate.user_vote === 'agree' ? 'voted' : ''}" data-vote="agree" ${!debate.is_active ? 'disabled' : ''}>
         <div class="vote-label">Agree</div>
-        <div class="vote-count">${debate.agree.toLocaleString()}</div>
-        <div class="vote-pct">${agreePercent}%</div>
+        ${showCounts ? `<div class="vote-count">${debate.agree.toLocaleString()}</div><div class="vote-pct">${agreePercent}%</div>` : ''}
       </button>
 
-      <button class="vote-btn disagree ${debate.user_vote === 'disagree' ? 'voted' : ''}" data-vote="disagree" ${!debate.is_active || hasVoted ? 'disabled' : ''}>
+      <button class="vote-btn disagree ${debate.user_vote === 'disagree' ? 'voted' : ''}" data-vote="disagree" ${!debate.is_active ? 'disabled' : ''}>
         <div class="vote-label">Disagree</div>
-        <div class="vote-count">${debate.disagree.toLocaleString()}</div>
-        <div class="vote-pct">${disagreePercent}%</div>
+        ${showCounts ? `<div class="vote-count">${debate.disagree.toLocaleString()}</div><div class="vote-pct">${disagreePercent}%</div>` : ''}
       </button>
     </div>
 
     <div class="progress-track">
-      <div class="progress-fill" style="width: ${agreePercent}%"></div>
+      <div class="progress-fill" style="width: ${showCounts ? agreePercent : 50}%"></div>
     </div>
 
     <div class="card-footer">
@@ -191,7 +189,7 @@ async function loadDebates() {
 
 async function vote(debateId, side) {
   const debate = debates.find(item => item.id === debateId);
-  if (!debate || !debate.is_active || debate.user_vote) return;
+  if (!debate || !debate.is_active) return;
 
   if (isGuest) {
     showLoginPopup('You need to log in to vote on this debate.');
@@ -213,9 +211,21 @@ async function vote(debateId, side) {
     return;
   }
 
-  debate[side] += 1;
-  debate.total_votes += 1;
-  debate.user_vote = side;
+  if (data.removed) {
+    debate[debate.user_vote] -= 1;
+    debate.total_votes -= 1;
+    debate.user_vote = null;
+  } else if (data.changed) {
+    const oldSide = debate.user_vote;
+    debate[oldSide] -= 1;
+    debate[side] += 1;
+    debate.user_vote = side;
+  } else {
+    debate[side] += 1;
+    debate.total_votes += 1;
+    debate.user_vote = side;
+  }
+
   debate.agree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.agree / debate.total_votes) * 1000) / 10;
   debate.disagree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.disagree / debate.total_votes) * 1000) / 10;
   renderDebates();

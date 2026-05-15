@@ -395,19 +395,8 @@ def debate_detail(debate_id):
                 return redirect(url_for('debates.debate_access', debate_id=debate_id))
 
     is_author = current_user.is_authenticated and current_user.id == debate.user_id
-    if debate.is_active and not is_author:
+    if debate.is_active:
         vote_data = {"total": debate.total_votes, "revealed": False}
-    elif debate.is_active and is_author:
-        total = debate.total_votes
-        vote_data = {
-            "revealed": True,
-            "total": total,
-            "agree": debate.agree_votes,
-            "disagree": debate.disagree_votes,
-            "agree_pct": round((debate.agree_votes / total) * 100, 1) if total else 0,
-            "disagree_pct": round((debate.disagree_votes / total) * 100, 1) if total else 0,
-            "winner": None,
-        }
     else:
         if debate.winner is None:
             close_debate(debate)
