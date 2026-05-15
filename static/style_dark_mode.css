@@ -421,3 +421,25 @@ body.dark-mode .status-ended {
   color: #9ca3af;
 }
 
+/*-------------Create Debate---------------*/
+body.dark-mode .card {
+    background: #111827;
+    border-color: #1f2937;
+  }
+  
+  body.dark-mode .divider {
+    border-color: #1f2937;
+    background: #1f2937;
+  }
+  
+  body.dark-mode .field label,
+  body.dark-mode .cb-label strong {
+    color: #e5e7eb;
+  }
+  
+  body.dark-mode .cb-label span,
+  body.dark-mode .field-hint,
+  body.dark-mode .tag-count {
+    color: #9ca3af;
+  }
+
