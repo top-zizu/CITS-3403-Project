@@ -355,7 +355,7 @@ body.sidebar-open main,
   justify-content: flex-end;
 }
 
-body.dark-mode .settings-card {
+/* body.dark-mode .settings-card {
   background: #111827;
   border-color: #1f2937;
 }
@@ -414,4 +414,4 @@ body.dark-mode .btn-outline:hover {
 
 body.dark-mode .modal {
   background: #111827;
-}
+} */

@@ -136,7 +136,7 @@
 
 /* Dark mode */
 
-body.dark-mode .notifications-card,
+/* body.dark-mode .notifications-card,
 body.dark-mode .notification-tab {
   background: #111827;
   border-color: #1f2937;
@@ -169,7 +169,7 @@ body.dark-mode .notification-content p,
 body.dark-mode .notification-time,
 body.dark-mode .notifications-header p {
   color: #9ca3af;
-}
+} */
 
 .notification-row {
   cursor: pointer;
@@ -192,7 +192,7 @@ body.dark-mode .notifications-header p {
   line-height: 1.5;
 }
 
-body.dark-mode .notification-row.expanded {
+/* body.dark-mode .notification-row.expanded {
   background: #1f2937;
 }
 
@@ -203,4 +203,4 @@ body.dark-mode .notification-expanded {
 
 body.dark-mode .notification-expanded p {
   color: #e5e7eb;
-}
+} */

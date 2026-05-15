@@ -216,7 +216,7 @@
 
 /* Dark mode */
 
-body.dark-mode .friends-card,
+/* body.dark-mode .friends-card,
 body.dark-mode .friends-tab,
 body.dark-mode .friends-search input {
   background: #111827;
@@ -243,7 +243,7 @@ body.dark-mode .profile-btn {
   background: #1f2937;
   color: #e5e7eb;
   border-color: #374151;
-}
+} */
 
 /* ── Friend Activity ─────────────────────────────────────────── */
 
@@ -304,7 +304,7 @@ body.dark-mode .profile-btn {
   color: var(--accent);
 }
 
-body.dark-mode .activity-pill {
+/* body.dark-mode .activity-pill {
   background: #111827;
   border-color: #1f2937;
   color: #f9fafb;
@@ -312,7 +312,7 @@ body.dark-mode .activity-pill {
 
 body.dark-mode .activity-text em {
   color: #60a5fa;
-}
+} */
 
 #activity-list .empty-state {
   padding-left: 0;

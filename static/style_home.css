@@ -243,7 +243,7 @@ body.sidebar-collapsed .home-main {
 
 /* DARK MODE */
 
-body.dark-mode .home-card {
+/* body.dark-mode .home-card {
   background: #111827;
   border-color: #1f2937;
   color: #f9fafb;
@@ -274,7 +274,7 @@ body.dark-mode .topic-pill {
 body.dark-mode .topic-pill:hover {
   background: #2563eb;
   color: #ffffff;
-}
+} */
 
 /* MOBILE */
 

@@ -341,7 +341,7 @@ main {
     margin-left: auto;
     margin-right: auto;
     }
-
+/* 
     body.dark-mode .table-card,
     body.dark-mode .scoring-card {
         background: #111827;
@@ -358,7 +358,7 @@ main {
     }
 
     body.dark-mode .leaderboard-row.you {
-        background: #1e293b; /* instead of hardcoded #fafbff */
+        background: #1e293b; 
     }
 
     body.dark-mode .table-header {
@@ -397,4 +397,4 @@ main {
         color: #e5e7eb;
     }
     
-        
+         */

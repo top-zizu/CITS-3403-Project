@@ -95,7 +95,7 @@ body.sidebar-collapsed main {
 
 /* DARK MODE */
 
-body.dark-mode .dh-sidebar {
+/* body.dark-mode .dh-sidebar {
   background: #111827;
   border-right: 1px solid #1f2937;
 }
@@ -122,7 +122,7 @@ body.dark-mode .sidebar-label {
 
 body.dark-mode .sidebar-divider {
   background: #374151;
-}
+} */
 
 @media (max-width: 900px) {
   .dh-sidebar {
@@ -194,7 +194,7 @@ body.dark-mode .sidebar-divider {
 
 /* Dark mode scrollbar */
 
-body.dark-mode .dh-sidebar {
+/* body.dark-mode .dh-sidebar {
   scrollbar-color: #475569 transparent;
 }
 
@@ -212,7 +212,7 @@ body.dark-mode .dh-sidebar::-webkit-scrollbar-thumb {
 body.dark-mode .dh-sidebar::-webkit-scrollbar-thumb:hover {
   background: #64748b;
   background-clip: padding-box;
-}
+} */
 
 /* Container for the icon and the dot */
 .sidebar-icon-wrapper {

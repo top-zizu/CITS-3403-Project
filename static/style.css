@@ -353,7 +353,7 @@ section.container.pb-5 {
   }
 }
 
-body.dark-mode {
+/* body.dark-mode {
   background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
   color: #e5e7eb;
 }
@@ -398,4 +398,4 @@ body.dark-mode .nav-links a:hover,
 body.dark-mode .nav-links a.active {
   background: #2563eb;
   color: #ffffff;
-}
+} */

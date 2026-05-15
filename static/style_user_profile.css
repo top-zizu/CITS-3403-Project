@@ -213,7 +213,7 @@ body.sidebar-open main,
   text-align: center;
 }
 
-body.dark-mode .profile-card,
+/* body.dark-mode .profile-card,
 body.dark-mode .activity-card {
   background: #111827;
   border-color: #1f2937;
@@ -270,4 +270,4 @@ body.dark-mode .edit-profile-btn:hover {
 body.dark-mode .status-ended {
   background: #1f2937;
   color: #9ca3af;
-}
+} */
