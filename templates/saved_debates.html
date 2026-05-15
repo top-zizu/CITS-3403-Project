@@ -1,14 +1,23 @@
+# saved_debates.html
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Saved Debates | DebateHub</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style_searchdebates.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_searchdebates.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='debate_cards.css') }}">
+
+  <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='main.js') }}" defer></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style_dark_mode.css') }}">
   <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
   <script src="{{ url_for('static', filename='main.js') }}" defer></script>
@@ -57,5 +66,151 @@
   <div class="empty-state" id="empty-state">No saved debates yet.</div>
 </main>
 
+<script>
+  const DEBATES = [
+    {% for debate in debates %}
+    {
+      id: {{ debate.id }},
+      prompt: {{ debate.title | tojson }},
+      timer: {{ ('Expires ' ~ debate.expires_at.strftime('%d %b') if debate.is_active else 'Ended ' ~ debate.expires_at.strftime('%d %b')) | tojson }},
+      agree: {{ debate.agree_votes }},
+      disagree: {{ debate.disagree_votes }},
+      comments: {{ debate.comments | length }},
+      tags: [{{ debate.category | tojson }}],
+      voted: null,
+    },
+    {% endfor %}
+  ];
+
+  const ALL_TAGS = ['politics','technology','lifestyle','food','work','animals','sports','entertainment'];
+  let activeFilters = new Set();
+  let searchQuery = '';
+
+  function getCsrf() {
+    return document.querySelector('meta[name="csrf-token"]').content;
+  }
+
+  const filterWrap = document.getElementById('filter-tags');
+  ALL_TAGS.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-tag';
+    btn.dataset.tag = tag;
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
+      ${tag}
+    `;
+
+    btn.addEventListener('click', () => {
+      activeFilters.has(tag)
+        ? activeFilters.delete(tag)
+        : activeFilters.add(tag);
+
+      btn.classList.toggle('active', activeFilters.has(tag));
+      renderDebates();
+    });
+
+    filterWrap.appendChild(btn);
+  });
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value.toLowerCase();
+    renderDebates();
+  });
+
+  function getFiltered() {
+    return DEBATES.filter(d => {
+      const matchSearch = !searchQuery || d.prompt.toLowerCase().includes(searchQuery);
+      const matchTags = activeFilters.size === 0 || d.tags.some(t => activeFilters.has(t));
+      return matchSearch && matchTags;
+    });
+  }
+
+  function renderDebates() {
+    const list = document.getElementById('debates-list');
+    const empty = document.getElementById('empty-state');
+    const filtered = getFiltered();
+
+    list.innerHTML = '';
+    empty.style.display = filtered.length === 0 ? 'block' : 'none';
+
+    filtered.forEach((debate, i) => {
+      const total = debate.agree + debate.disagree;
+      const agreePct = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
+      const disagreePct = (100 - agreePct).toFixed(1);
+
+      const card = document.createElement('div');
+      card.className = 'debate-card';
+      card.style.animationDelay = `${i * 60}ms`;
+
+      card.innerHTML = `
+        <button class="save-btn saved" onclick="unsave(${debate.id})" title="Unsave debate">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+
+        <div class="card-timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          ${debate.timer}
+        </div>
+
+        <div class="card-prompt">${debate.prompt}</div>
+
+        <div class="vote-row">
+          <button class="vote-btn agree ${debate.voted==='agree'?'voted':''}" onclick="vote(${debate.id},'agree')">
+            <div class="vote-label">Agree</div>
+            <div class="vote-count" id="agree-count-${debate.id}">${debate.agree.toLocaleString()}</div>
+            <div class="vote-pct" id="agree-pct-${debate.id}">${agreePct}%</div>
+          </button>
+
+          <button class="vote-btn disagree ${debate.voted==='disagree'?'voted':''}" onclick="vote(${debate.id},'disagree')">
+            <div class="vote-label">Disagree</div>
+            <div class="vote-count" id="disagree-count-${debate.id}">${debate.disagree.toLocaleString()}</div>
+            <div class="vote-pct" id="disagree-pct-${debate.id}">${disagreePct}%</div>
+          </button>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-${debate.id}" style="width:${agreePct}%"></div>
+        </div>
+
+        <div class="card-footer">
+          <a href="/debate/${debate.id}" class="comment-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            ${debate.comments} Comments
+          </a>
+
+          <div class="card-tags">
+            ${debate.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
+          </div>
+        </div>
+      `;
+
+      card.style.cursor = 'pointer';
+
+      card.addEventListener('click', e => {
+        if (!e.target.closest('button') && !e.target.closest('a')) {
+          window.location.href = `/debate/${debate.id}`;
+        }
+      });
+
+      list.appendChild(card);
+    });
+  }
+
+  function vot
+```
 </body>
 </html>
