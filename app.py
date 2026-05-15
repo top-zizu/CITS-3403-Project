@@ -762,7 +762,13 @@ def api_friends():
     if tab == "followers":
         users_query = current_user.followers.order_by(User.username.asc())
     elif tab == "discover":
-        users_query = User.query.filter(User.id != current_user.id).order_by(User.username.asc())
+        already_following_ids = [u.id for u in current_user.following.all()]
+        already_following_ids.append(current_user.id)
+        users_query = User.query.filter(~User.id.in_(already_following_ids)).order_by(User.reputation_score.desc())
+        if tab == "discover" and not query_text:
+            mutuals = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
+            others = [u for u in users if u.following.filter(User.id == current_user.id).first() is None]
+            users = mutuals + others
     else:
         tab = "following"
         users_query = current_user.following.order_by(User.username.asc())
@@ -778,12 +784,6 @@ def api_friends():
                 user.username.lower(),
             )
         )
-    elif tab == "discover" and not query_text:
-        users = [
-            user for user in users
-            if current_user.following.filter(User.id == user.id).first() is not None
-            and user.following.filter(User.id == current_user.id).first() is not None
-        ]
 
     return jsonify({
         "tab": tab,
