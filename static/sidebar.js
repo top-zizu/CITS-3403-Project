@@ -202,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function checkUnreadNotifications() {
     try {
-      const response = await fetch('/api/notifications/unread-count'); // Adjust this URL to endpoint of your backend that returns unread count of notifications
+      const response = await fetch('/api/notifications/unread-count'); 
       const data = await response.json();
       
       const dot = document.getElementById("sidebar-notification-dot");

@@ -183,6 +183,12 @@ body.dark-mode .badge-moderate {
     color: #9ca3af;
 }
 
+body.dark-mode .sort-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    }
+
 body.dark-mode .rank-num,
 body.dark-mode .username,
 body.dark-mode .user-meta,

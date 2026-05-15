@@ -241,40 +241,7 @@ body.sidebar-collapsed .home-main {
   max-width: none;
 }
 
-/* DARK MODE */
 
-/* body.dark-mode .home-card {
-  background: #111827;
-  border-color: #1f2937;
-  color: #f9fafb;
-}
-
-body.dark-mode .debate-preview {
-  border-bottom-color: #374151;
-}
-
-body.dark-mode .debate-preview:hover {
-  background: #1f2937;
-}
-
-body.dark-mode .debate-preview p,
-body.dark-mode .activity {
-  color: #9ca3af;
-}
-
-body.dark-mode .stat-row {
-  border-bottom-color: #374151;
-}
-
-body.dark-mode .topic-pill {
-  background: #1f2937;
-  color: #60a5fa;
-}
-
-body.dark-mode .topic-pill:hover {
-  background: #2563eb;
-  color: #ffffff;
-} */
 
 /* MOBILE */
 

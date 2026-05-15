@@ -192,28 +192,6 @@ body.dark-mode .sidebar-divider {
   background-clip: padding-box;
 }
 
-/* Dark mode scrollbar */
-
-/* body.dark-mode .dh-sidebar {
-  scrollbar-color: #475569 transparent;
-}
-
-body.dark-mode .dh-sidebar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-body.dark-mode .dh-sidebar::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-body.dark-mode .dh-sidebar::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-  background-clip: padding-box;
-} */
-
 /* Container for the icon and the dot */
 .sidebar-icon-wrapper {
   position: relative;
