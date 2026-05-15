@@ -74,6 +74,7 @@
 
 .vote-btn,
 .votes button {
+  min-height: 60px;
   border-radius: 10px;
   padding: 14px 16px;
   border: 1.5px solid;
@@ -82,6 +83,7 @@
   transition: all .15s;
   background: transparent;
   font-weight: 600;
+  overflow: hidden;
 }
 
 .vote-btn.agree,
