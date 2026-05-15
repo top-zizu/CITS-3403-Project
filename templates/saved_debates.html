@@ -10,20 +10,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style_sidebar.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style_searchdebates.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='debate_cards.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_debatecards.css') }}">
   <script src="{{ url_for('static', filename='sidebar.js') }}" defer></script>
   <script src="{{ url_for('static', filename='main.js') }}" defer></script>
-  <style>
-    .save-btn {
-      position: absolute; top: 14px; right: 14px;
-      background: none; border: none; cursor: pointer;
-      padding: 4px; border-radius: 6px; color: var(--accent);
-      transition: transform .15s; z-index: 2; display: flex; align-items: center;
-    }
-    .save-btn svg { width: 22px; height: 22px; }
-    .save-btn:hover { transform: scale(1.12); }
-    .debate-card { position: relative; }
-  </style>
 </head>
 <body>
 
