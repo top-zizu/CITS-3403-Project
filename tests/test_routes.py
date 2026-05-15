@@ -190,12 +190,13 @@ def test_cast_vote(logged_in_client, sample_debate, app):
         assert debate.agree_votes == 1
 
 
-def test_duplicate_vote_returns_error(logged_in_client, sample_debate):
-    """A user cannot vote twice on the same debate."""
+def test_same_vote_toggles_removal(logged_in_client, sample_debate):
+    """Voting the same way twice removes the vote (toggle behaviour)."""
     logged_in_client.post(f"/debates/{sample_debate.id}/vote", data={"vote_type": "agree"})
     response = logged_in_client.post(f"/debates/{sample_debate.id}/vote", data={"vote_type": "agree"})
     data = response.get_json()
-    assert "error" in data
+    assert data["success"] is True
+    assert data["removed"] is True
 
 
 def test_vote_on_closed_debate_rejected(logged_in_client, app, sample_user):

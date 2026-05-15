@@ -1,0 +1,194 @@
+.debate-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 20px 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  animation: fadeUp .3s ease both;
+}
+
+.debate-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.1);
+}
+
+.save-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  color: #ccc;
+  transition: transform .15s ease, color .15s ease;
+  z-index: 2;
+}
+
+.save-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.save-btn:hover,
+.save-btn.saved {
+  color: var(--accent);
+}
+
+.card-timer,
+.time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .78rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.card-timer svg,
+.time svg {
+  width: 13px;
+  height: 13px;
+}
+
+.card-prompt,
+.debate-card h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.vote-row,
+.votes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.vote-btn,
+.votes button {
+  min-height: 60px;
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1.5px solid;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  background: transparent;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.vote-btn.agree,
+.votes .agree {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: var(--accent);
+}
+
+.vote-btn.disagree,
+.votes .disagree {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.vote-btn.agree:hover,
+.votes .agree:hover,
+.vote-btn.agree.voted,
+.votes .agree.selected-vote {
+  background: #dbeafe;
+  border-color: var(--accent);
+}
+
+.vote-btn.disagree:hover,
+.votes .disagree:hover,
+.vote-btn.disagree.voted,
+.votes .disagree.selected-vote {
+  background: #ffe4e6;
+  border-color: #e11d48;
+}
+
+.progress-track,
+.progress-bar {
+  display: flex;
+  height: 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.progress-fill,
+.agree-bar {
+  height: 100%;
+  background: var(--accent);
+}
+
+.disagree-bar {
+  height: 100%;
+  background: #ef4444;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.comment-link,
+.comments-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .8rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.comment-link svg,
+.comments-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.card-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .75rem;
+  color: var(--muted);
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.card-tag svg {
+  width: 11px;
+  height: 11px;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
