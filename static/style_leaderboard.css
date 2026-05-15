@@ -342,4 +342,58 @@ main {
     margin-right: auto;
     }
 
-    
+    body.dark-mode .table-card,
+    body.dark-mode .scoring-card {
+        background: #111827;
+        border-color: #1f2937;
+    }
+
+    body.dark-mode .leaderboard-row {
+        color: #e5e7eb;
+        border-bottom-color: #1f2937;
+    }
+
+    body.dark-mode .leaderboard-row:hover {
+        background: #1f2937;
+    }
+
+    body.dark-mode .leaderboard-row.you {
+        background: #1e293b; /* instead of hardcoded #fafbff */
+    }
+
+    body.dark-mode .table-header {
+        background: #0f172a;
+        border-bottom-color: #1f2937;
+    }
+
+    body.dark-mode .badge-conformist {
+        background: #1e3a8a;
+        color: #93c5fd;
+    }
+
+    body.dark-mode .badge-contrarian {
+        background: #4c0519;
+        color: #fda4af;
+    }
+
+    body.dark-mode .badge-moderate {
+        background: #1f2937;
+        color: #9ca3af;
+    }
+
+    body.dark-mode .rank-num,
+    body.dark-mode .username,
+    body.dark-mode .user-meta,
+    body.dark-mode .points-cell,
+    body.dark-mode .debates-cell,
+    body.dark-mode .conformity-pct,
+    body.dark-mode .table-header span {
+        color: #e5e7eb;
+    }
+
+    body.dark-mode .scoring-card h3,
+    body.dark-mode .scoring-card h4,
+    body.dark-mode .scoring-col ul li {
+        color: #e5e7eb;
+    }
+        
