@@ -1,0 +1,35 @@
+.access-box {
+            max-width: 420px;
+            margin: 100px auto;
+            text-align: center;
+            padding: 2rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+    }
+
+.access-box input {
+    padding: 0.6rem 1rem;
+    font-size: 1.3rem;
+    letter-spacing: 0.3rem;
+    text-align: center;
+    width: 200px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    }
+
+.access-box button {
+    display: block;
+    margin: 0 auto;
+    padding: 0.5rem 2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    }
+    
+.error { 
+    color: #c0392b; margin-bottom: 1rem; 
+    }
+
+.back-link { 
+    margin-top: 1.5rem; display: block; 
+    }

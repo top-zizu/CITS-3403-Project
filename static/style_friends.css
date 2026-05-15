@@ -214,37 +214,6 @@
   color: var(--muted);
 }
 
-/* Dark mode */
-
-body.dark-mode .friends-card,
-body.dark-mode .friends-tab,
-body.dark-mode .friends-search input {
-  background: #111827;
-  border-color: #1f2937;
-  color: #f9fafb;
-}
-
-body.dark-mode .friends-tab.active {
-  background: #2563eb;
-  color: white;
-}
-
-body.dark-mode .friend-row {
-  border-bottom-color: #374151;
-}
-
-body.dark-mode .friend-info p,
-body.dark-mode .friends-header p {
-  color: #9ca3af;
-}
-
-body.dark-mode .decline-btn,
-body.dark-mode .profile-btn {
-  background: #1f2937;
-  color: #e5e7eb;
-  border-color: #374151;
-}
-
 /* ── Friend Activity ─────────────────────────────────────────── */
 
 .friends-activity-section {
@@ -302,16 +271,6 @@ body.dark-mode .profile-btn {
 .activity-text em {
   font-style: normal;
   color: var(--accent);
-}
-
-body.dark-mode .activity-pill {
-  background: #111827;
-  border-color: #1f2937;
-  color: #f9fafb;
-}
-
-body.dark-mode .activity-text em {
-  color: #60a5fa;
 }
 
 #activity-list .empty-state {
