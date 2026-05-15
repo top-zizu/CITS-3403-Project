@@ -531,6 +531,52 @@ def leaderboard():
 
     return render_template('leaderboard.html', users=query.all(), sort=sort, period=period)
 
+@app.route("/api/leaderboard")
+def api_leaderboard():
+    sort   = request.args.get('sort', 'most_active')
+    period = request.args.get('period', 'all_time')
+
+    now   = datetime.now(timezone.utc)
+    query = User.query
+
+    if period in ('this_week', 'this_month'):
+        days   = 7 if period == 'this_week' else 30
+        cutoff = now - timedelta(days=days)
+        voted_ids     = {v.user_id for v in Vote.query.filter(Vote.created_at >= cutoff).all()}
+        commented_ids = {c.user_id for c in Comment.query.filter(Comment.created_at >= cutoff).all()}
+        created_ids   = {d.user_id for d in Debate.query.filter(Debate.created_at >= cutoff).all()}
+        active_ids    = voted_ids | commented_ids | created_ids
+        if not active_ids:
+            return jsonify({"users": [], "sort": sort, "period": period})
+        query = query.filter(User.id.in_(active_ids))
+
+    if sort == 'most_distinctive':
+        query = query.order_by(User.conformity_score.asc())
+    elif sort == 'most_wins':
+        query = query.order_by(User.debates_won.desc())
+    else:
+        query = query.order_by(User.reputation_score.desc())
+
+    def badge(user):
+        if user.conformity_score >= 60:
+            return 'Conformist'
+        if user.conformity_score < 40:
+            return 'Contrarian'
+        return 'Moderate'
+
+    users = query.all()
+    return jsonify({
+        "users": [{
+            "username": u.username,
+            "profile_url": url_for("profile", username=u.username),
+            "points": u.reputation_score,
+            "debates": u.debates_won + u.debates_lost,
+            "conformity": u.conformity_score,
+            "badge": badge(u),
+        } for u in users],
+        "sort": sort,
+        "period": period,
+    })
 
 # ── Profile ───────────────────────────────────────────────────────
 
