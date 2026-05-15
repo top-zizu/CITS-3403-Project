@@ -710,12 +710,6 @@ def api_friends():
                 user.username.lower(),
             )
         )
-    elif tab == "discover" and not query_text:
-        users = [
-            user for user in users
-            if current_user.following.filter(User.id == user.id).first() is not None
-            and user.following.filter(User.id == current_user.id).first() is not None
-        ]
 
     return jsonify({
         "tab": tab,
