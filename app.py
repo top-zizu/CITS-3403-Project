@@ -785,10 +785,6 @@ def api_friends():
         already_following_ids = [u.id for u in current_user.following.all()]
         already_following_ids.append(current_user.id)
         users_query = User.query.filter(~User.id.in_(already_following_ids)).order_by(User.reputation_score.desc())
-        if tab == "discover" and not query_text:
-            mutuals = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
-            others = [u for u in users if u.following.filter(User.id == current_user.id).first() is None]
-            users = mutuals + others
     else:
         tab = "following"
         users_query = current_user.following.order_by(User.username.asc())
@@ -797,6 +793,10 @@ def api_friends():
         users_query = users_query.filter(User.username.ilike(f"%{query_text}%"))
 
     users = users_query.limit(50).all()
+    if tab == "discover" and not query_text:
+        mutuals = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
+        others = [u for u in users if u.following.filter(User.id == current_user.id).first() is None]
+        users = mutuals + others
     if tab == "following":
         users.sort(
             key=lambda user: (
@@ -811,7 +811,7 @@ def api_friends():
         "counts": {
             "following": current_user.following.count(),
             "followers": current_user.followers.count(),
-            "discover": User.query.filter(User.id != current_user.id).count(),
+            "discover": User.query.filter(~User.id.in_([u.id for u in current_user.following.all()] + [current_user.id])).count(),
         },
     })
 
