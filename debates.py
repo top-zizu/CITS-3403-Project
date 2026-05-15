@@ -270,12 +270,17 @@ def post_comment(debate_id):
 
     db.session.commit()
 
+    user_vote = Vote.query.filter_by(user_id=current_user.id, debate_id=debate_id).first()
+    stance_map = {'agree': 'blue', 'disagree': 'red'}
+    stance = stance_map.get(user_vote.vote_type, 'neutral') if user_vote else 'neutral'
+
     return jsonify({
         'success':    True,
         'comment_id': comment.id,
         'username':   current_user.username,
         'content':    comment.content,
         'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
+        'stance':     stance,
     })
 
 
@@ -312,12 +317,17 @@ def post_reply(comment_id):
 
     db.session.commit()
 
+    user_vote = Vote.query.filter_by(user_id=current_user.id, debate_id=parent.debate_id).first()
+    stance_map = {'agree': 'blue', 'disagree': 'red'}
+    stance = stance_map.get(user_vote.vote_type, 'neutral') if user_vote else 'neutral'
+
     return jsonify({
         'success':    True,
         'comment_id': reply.id,
         'username':   current_user.username,
         'content':    reply.content,
         'created_at': reply.created_at.strftime('%d %b %Y, %H:%M'),
+        'stance':     stance,
     })
 
 

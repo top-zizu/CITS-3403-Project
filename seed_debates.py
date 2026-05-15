@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app import app
-from models import db, Debate, User
+from models import db, Debate, User, Comment, Vote
 
 
 DEMO_USER = {
@@ -199,8 +199,128 @@ def seed_debates():
     print(f"Seed complete: {created} debates created, {skipped} already existed.")
 
 
+DEMO_COMMENTS = [
+    {
+        "debate_title": "Universal basic income should be implemented globally",
+        "comments": [
+            {"username": "logicqueen",    "content": "UBI addresses structural unemployment caused by automation. The Finland pilot showed promising results.", "vote": "agree"},
+            {"username": "argumentking", "content": "The cost is prohibitive. Where does the funding come from without crushing tax increases on the middle class?", "vote": "disagree"},
+            {"username": "voiceofreason","content": "Implementation details matter more than the concept itself. A badly designed UBI could be worse than nothing.", "vote": None},
+            {"username": "contrarymary", "content": "Unconditional income removes the incentive to contribute. Society functions on reciprocal effort.", "vote": "disagree"},
+            {"username": "mindchanger",  "content": "I was sceptical but the data from pilot programmes is genuinely compelling.", "vote": "agree"},
+        ],
+    },
+    {
+        "debate_title": "Artificial Intelligence will create more jobs than it destroys",
+        "comments": [
+            {"username": "logicqueen",    "content": "Every major technological shift has historically created more jobs than it eliminated. AI is no different.", "vote": "agree"},
+            {"username": "argumentking", "content": "Previous shifts took decades. AI is moving at a pace that workers simply cannot retrain fast enough to match.", "vote": "disagree"},
+            {"username": "contrarymary", "content": "The jobs AI creates require very different skills to the ones it destroys. That gap is the real problem.", "vote": "disagree"},
+            {"username": "mindchanger",  "content": "New industries like AI safety, model auditing, and prompt engineering did not exist five years ago.", "vote": "agree"},
+        ],
+    },
+    {
+        "debate_title": "Climate change is the most pressing issue of our time",
+        "comments": [
+            {"username": "voiceofreason","content": "The scientific consensus is unambiguous. The question is purely about political will.", "vote": "agree"},
+            {"username": "argumentking", "content": "Pandemics and nuclear proliferation are existential risks on a shorter timeline. Priority matters.", "vote": "disagree"},
+            {"username": "logicqueen",    "content": "Climate change compounds every other crisis — food security, migration, conflict. It is the multiplier.", "vote": "agree"},
+            {"username": "contrarymary", "content": "We have been told it is the most pressing issue for 30 years and emissions keep rising. The framing is not working.", "vote": "disagree"},
+        ],
+    },
+    {
+        "debate_title": "Social media does more harm than good for society",
+        "comments": [
+            {"username": "mindchanger",  "content": "The mental health data on teenagers is damning. We would not accept this from any other product.", "vote": "agree"},
+            {"username": "logicqueen",    "content": "Social media connected activist movements and brought down authoritarian governments. That is not nothing.", "vote": "disagree"},
+            {"username": "argumentking", "content": "Algorithmic amplification of outrage is a deliberate design choice, not a side effect. That is the problem.", "vote": "agree"},
+            {"username": "voiceofreason","content": "The harm is real but so is the benefit. The issue is regulation, not the technology itself.", "vote": None},
+        ],
+    },
+    {
+        "debate_title": "Remote work is better than working in an office",
+        "comments": [
+            {"username": "contrarymary", "content": "Junior employees lose mentorship and osmotic learning. Remote work advantages those who are already established.", "vote": "disagree"},
+            {"username": "mindchanger",  "content": "Two hours of commuting saved per day is two hours of life returned. That is not trivial.", "vote": "agree"},
+            {"username": "logicqueen",    "content": "Productivity data is mixed and heavily dependent on role type. This is not a universal answer.", "vote": None},
+            {"username": "argumentking", "content": "Collaboration suffers. The best ideas I have had came from a hallway conversation, not a scheduled Zoom.", "vote": "disagree"},
+            {"username": "voiceofreason","content": "Hybrid is clearly the answer most people actually want, which suggests neither extreme is right.", "vote": "agree"},
+        ],
+    },
+    {
+        "debate_title": "Pineapple belongs on pizza",
+        "comments": [
+            {"username": "argumentking", "content": "Sweet and savoury is a legitimate flavour combination used in cuisines worldwide. The outrage is performative.", "vote": "agree"},
+            {"username": "contrarymary", "content": "The moisture content ruins the base. This is not an opinion, it is food science.", "vote": "disagree"},
+            {"username": "mindchanger",  "content": "I used to hate it. Then I tried a good Hawaiian with quality ham and proper mozzarella. Changed my mind.", "vote": "agree"},
+            {"username": "voiceofreason","content": "Put whatever you want on your pizza. The gatekeeping is the embarrassing part.", "vote": "agree"},
+            {"username": "logicqueen",    "content": "Texture contrast is a valid complaint. Pineapple releases water when heated and softens everything around it.", "vote": "disagree"},
+        ],
+    },
+]
+
+
+def seed_comments():
+    social_users = {u["username"]: User.query.filter_by(username=u["username"]).first()
+                    for u in DEMO_SOCIAL_USERS}
+
+    created_comments = 0
+    created_votes = 0
+    skipped = 0
+
+    for debate_data in DEMO_COMMENTS:
+        debate = Debate.query.filter_by(title=debate_data["debate_title"]).first()
+        if not debate:
+            print(f"  Debate not found, skipping: {debate_data['debate_title']}")
+            continue
+
+        for item in debate_data["comments"]:
+            user = social_users.get(item["username"])
+            if not user:
+                continue
+
+            existing = Comment.query.filter_by(
+                user_id=user.id,
+                debate_id=debate.id,
+                content=item["content"],
+            ).first()
+            if existing:
+                skipped += 1
+                continue
+
+            if item["vote"]:
+                existing_vote = Vote.query.filter_by(
+                    user_id=user.id, debate_id=debate.id
+                ).first()
+                if not existing_vote:
+                    vote = Vote(
+                        user_id=user.id,
+                        debate_id=debate.id,
+                        vote_type=item["vote"],
+                    )
+                    if item["vote"] == "agree":
+                        debate.agree_votes += 1
+                    else:
+                        debate.disagree_votes += 1
+                    db.session.add(vote)
+                    created_votes += 1
+
+            comment = Comment(
+                user_id=user.id,
+                debate_id=debate.id,
+                content=item["content"],
+                parent_comment_id=None,
+            )
+            db.session.add(comment)
+            created_comments += 1
+
+    db.session.commit()
+    print(f"Comment seed complete: {created_comments} comments created, {created_votes} votes created, {skipped} skipped.")
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         seed_debates()
         seed_social_graph()
+        seed_comments()
