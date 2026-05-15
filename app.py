@@ -567,6 +567,26 @@ def delete_account():
 
 # ── Social ────────────────────────────────────────────────────────
 
+@app.route("/api/notifications")
+@login_required
+def api_notifications():
+    user_notifications = (
+        Notification.query
+        .filter_by(user_id=current_user.id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    return jsonify({
+        "notifications": [{
+            "id": n.id,
+            "type": n.notification_type,
+            "message": n.message,
+            "is_read": n.is_read,
+            "link_url": n.link_url,
+            "created_at": n.created_at.strftime("%d %b %Y, %H:%M"),
+        } for n in user_notifications]
+    })
+
 @app.route("/notifications")
 @login_required
 def notifications():
@@ -589,7 +609,7 @@ def api_notifications_unread_count():
         user_id=current_user.id,
         is_read=False,
     ).count()
-    return jsonify({"count": count})
+    return jsonify({"unread_count": count})
 
 
 @app.route("/friends")
