@@ -154,3 +154,24 @@
     flex-wrap: wrap;
   }
 }
+
+.votes button svg,
+.vote-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.votes button p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.votes button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
