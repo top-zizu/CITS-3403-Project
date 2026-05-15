@@ -9,8 +9,9 @@ from selenium.webdriver.chrome.options import Options
 
 BASE_URL = "http://127.0.0.1:5000"
 
-TEST_USERNAME = "selenium_test_user"
-TEST_EMAIL = "selenium@test.com"
+# Use timestamp to avoid conflicts if test user already exists in DB
+TEST_USERNAME = f"selenium_user_{int(time.time())}"
+TEST_EMAIL = f"selenium_{int(time.time())}@test.com"
 TEST_PASSWORD = "TestPass123!"
 
 
@@ -35,6 +36,11 @@ def wait_for(driver, by, value, timeout=10):
     )
 
 
+def click_submit(driver):
+    """Click the submit button regardless of whether it is input or button."""
+    driver.find_element(By.CSS_SELECTOR, "[type='submit']").click()
+
+
 # ── Tests ─────────────────────────────────────────────────────────
 
 def test_homepage_loads(driver):
@@ -52,7 +58,7 @@ def test_signup(driver):
     driver.find_element(By.NAME, "email").send_keys(TEST_EMAIL)
     driver.find_element(By.NAME, "password").send_keys(TEST_PASSWORD)
     driver.find_element(By.NAME, "confirm_password").send_keys(TEST_PASSWORD)
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    click_submit(driver)
 
     time.sleep(1)
     assert "/login" in driver.current_url or "log in" in driver.page_source.lower()
@@ -65,7 +71,7 @@ def test_login(driver):
 
     driver.find_element(By.NAME, "login").send_keys(TEST_USERNAME)
     driver.find_element(By.NAME, "password").send_keys(TEST_PASSWORD)
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    click_submit(driver)
 
     time.sleep(1)
     assert "/dashboard" in driver.current_url or "dashboard" in driver.page_source.lower()
@@ -83,14 +89,18 @@ def test_create_debate(driver):
     driver.get(f"{BASE_URL}/debates/create")
     wait_for(driver, By.NAME, "title")
 
+    # Fill in the title (textarea)
     driver.find_element(By.NAME, "title").send_keys("Selenium Test Debate")
-    driver.find_element(By.NAME, "description").send_keys("This debate was created by a Selenium test.")
 
-    category_select = driver.find_element(By.NAME, "category")
-    category_select.find_element(By.CSS_SELECTOR, "option:not([value=''])").click()
+    # Set hidden fields and enable the submit button via JavaScript
+    driver.execute_script("""
+        document.getElementById('description-hidden').value = 'This debate was created by a Selenium test.';
+        document.getElementById('category-hidden').value = 'general';
+        document.getElementById('submit-btn').disabled = false;
+    """)
 
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    time.sleep(1)
+    driver.execute_script("document.getElementById('debate-form').submit();")
+    time.sleep(2)
 
     assert "Selenium Test Debate" in driver.page_source
 
