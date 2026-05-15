@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const navbar = `
     <nav id="main-nav">
-      <a href="/" class="nav-brand">
+      <a href="/home" class="nav-brand">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
