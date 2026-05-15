@@ -132,13 +132,19 @@ function renderNavUser(user) {
   }
 }
 
+const brandLink = document.getElementById('brand-link');
+
 fetch('/api/me')
   .then(response => {
     if (!response.ok) throw new Error('Not logged in');
     return response.json();
   })
-  .then(renderNavUser)
+  .then(user => {
+    brandLink.href = '/home';
+    renderNavUser(user);
+  })
   .catch(() => {
+    brandLink.href = '/';
     navUser.style.display = 'none';
   });
 
