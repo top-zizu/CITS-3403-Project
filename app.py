@@ -153,7 +153,7 @@ def _debate_to_dict(debate):
 @app.route("/api/debates/<int:debate_id>/comments")
 def api_debate_comments(debate_id):
     db.get_or_404(Debate, debate_id)
-    sort = request.args.get("sort", "newest")
+    sort = request.args.get("sort", "top")
 
     if sort == "top":
         top_level = (
@@ -181,6 +181,27 @@ def api_debate_comments(debate_id):
     stance_map = {'agree': 'blue', 'disagree': 'red'}
     comment_stances = {v.user_id: stance_map.get(v.vote_type, 'neutral') for v in votes_on_debate}
 
+    def comment_sort_key(c):
+        return (-len(c.likes), -c.id)
+
+    def sorted_replies_for(c):
+        replies = list(c.replies)
+        parent_stance = comment_stances.get(c.user_id, 'neutral')
+        contrasting_replies = [
+            r for r in replies
+            if comment_stances.get(r.user_id, 'neutral') != parent_stance
+        ]
+
+        if not contrasting_replies:
+            return sorted(replies, key=comment_sort_key)
+
+        best_contrasting_reply = sorted(contrasting_replies, key=comment_sort_key)[0]
+        remaining_replies = [
+            r for r in replies
+            if r.id != best_contrasting_reply.id
+        ]
+        return [best_contrasting_reply] + sorted(remaining_replies, key=comment_sort_key)
+
     def comment_to_dict(c):
         return {
             "id": c.id,
@@ -189,7 +210,7 @@ def api_debate_comments(debate_id):
             "time": c.created_at.strftime('%d %b %Y, %H:%M'),
             "text": c.content,
             "likes": len(c.likes),
-            "replies": [comment_to_dict(r) for r in c.replies],
+            "replies": [comment_to_dict(r) for r in sorted_replies_for(c)],
         }
 
     return jsonify({
@@ -408,7 +429,7 @@ def debate_detail(debate_id):
                 "winner": debate.winner,
             }
 
-    sort = request.args.get('sort', 'newest')
+    sort = request.args.get('sort', 'top')
     if sort == 'top':
         top_level_comments = (
             Comment.query
@@ -785,10 +806,6 @@ def api_friends():
         already_following_ids = [u.id for u in current_user.following.all()]
         already_following_ids.append(current_user.id)
         users_query = User.query.filter(~User.id.in_(already_following_ids)).order_by(User.reputation_score.desc())
-        if tab == "discover" and not query_text:
-            mutuals = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
-            others = [u for u in users if u.following.filter(User.id == current_user.id).first() is None]
-            users = mutuals + others
     else:
         tab = "following"
         users_query = current_user.following.order_by(User.username.asc())
@@ -797,6 +814,10 @@ def api_friends():
         users_query = users_query.filter(User.username.ilike(f"%{query_text}%"))
 
     users = users_query.limit(50).all()
+    if tab == "discover" and not query_text:
+        mutuals = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
+        others = [u for u in users if u.following.filter(User.id == current_user.id).first() is None]
+        users = mutuals + others
     if tab == "following":
         users.sort(
             key=lambda user: (
@@ -811,7 +832,7 @@ def api_friends():
         "counts": {
             "following": current_user.following.count(),
             "followers": current_user.followers.count(),
-            "discover": User.query.filter(User.id != current_user.id).count(),
+            "discover": User.query.filter(~User.id.in_([u.id for u in current_user.following.all()] + [current_user.id])).count(),
         },
     })
 
