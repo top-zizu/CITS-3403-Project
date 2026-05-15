@@ -155,8 +155,8 @@
     </div>
 
     <div class="stance-tabs">
-      <button class="stance-tab blue active" onclick="setStance('blue', this)">Blue (Agree)</button>
-      <button class="stance-tab red"         onclick="setStance('red', this)">Red (Disagree)</button>
+      <button class="stance-tab blue active" onclick="setStance('blue', this)">Agree</button>
+      <button class="stance-tab red"         onclick="setStance('red', this)">Disagree</button>
       <button class="stance-tab neutral"     onclick="setStance('neutral', this)">Neutral</button>
     </div>
 
@@ -374,6 +374,27 @@
     return s === 'blue' ? 'Agree' : s === 'red' ? 'Disagree' : 'Neutral';
   }
 
+  function compareByLikes(a, b) {
+    if (b.likes !== a.likes) return b.likes - a.likes;
+    return b.id - a.id;
+  }
+
+  function sortedRepliesFor(comment) {
+    const replies = [...(comment.replies || [])];
+    const bestContrastingReply = replies
+      .filter(reply => reply.stance !== comment.stance)
+      .sort(compareByLikes)[0];
+
+    if (!bestContrastingReply) return replies.sort(compareByLikes);
+
+    return [
+      bestContrastingReply,
+      ...replies
+        .filter(reply => reply.id !== bestContrastingReply.id)
+        .sort(compareByLikes),
+    ];
+  }
+
   function buildComment(c, isReply = false, parentId = null) {
     return `
       <div class="comment ${c.stance}" id="comment-${c.id}">
@@ -404,7 +425,7 @@
             <button class="reply-post-btn" onclick="postReply(${c.id})">Reply</button>
           </div>
           <div class="replies">
-            ${c.replies.map(r => buildComment(r, true, c.id)).join('')}
+            ${sortedRepliesFor(c).map(r => buildComment(r, true, c.id)).join('')}
           </div>
         ` : ''}
       </div>
@@ -413,7 +434,7 @@
 
   function renderComments() {
     document.getElementById('comments-list').innerHTML =
-      comments.map(c => buildComment(c)).join('');
+      [...comments].sort(compareByLikes).map(c => buildComment(c)).join('');
     document.getElementById('comment-count').textContent = comments.length;
   }
 
