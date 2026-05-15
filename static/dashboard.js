@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
     debateContainer.innerHTML = filtered.map(debate => {
       const agreePercent = debate.total_votes === 0 ? 0 : debate.agree_pct;
       const disagreePercent = debate.total_votes === 0 ? 0 : debate.disagree_pct;
-      const hasVoted = debate.user_vote !== null;
+      const showCounts = !debate.is_active;
 
       return `
         <article class="debate-card" data-id="${debate.id}" data-status="${debate.status}" style="cursor: pointer;">
@@ -110,8 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </svg>
                 Agree
               </p>
-              <strong>${formatNumber(debate.agree)}</strong>
-              <div>${agreePercent}%</div>
+              ${showCounts ? `<strong>${formatNumber(debate.agree)}</strong><div>${agreePercent}%</div>` : ''}
             </button>
 
             <button class="disagree ${debate.user_vote === "disagree" ? "selected-vote" : ""}" data-vote="disagree" ${!debate.is_active ? "disabled" : ""}>
@@ -123,14 +122,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </svg>
                 Disagree
               </p>
-              <strong>${formatNumber(debate.disagree)}</strong>
-              <div>${disagreePercent}%</div>
+              ${showCounts ? `<strong>${formatNumber(debate.disagree)}</strong><div>${disagreePercent}%</div>` : ''}
             </button>
           </div>
 
           <div class="progress-bar">
-            <div class="agree-bar" style="width: ${agreePercent}%"></div>
-            <div class="disagree-bar" style="width: ${disagreePercent}%"></div>
+            <div class="agree-bar" style="width: ${showCounts ? agreePercent : 50}%"></div>
+            <div class="disagree-bar" style="width: ${showCounts ? disagreePercent : 50}%"></div>
           </div>
 
           <div class="card-footer">
@@ -163,7 +161,6 @@ document.addEventListener("DOMContentLoaded", () => {
   async function castVote(debateId, side) {
     const debate = debates.find(item => item.id === debateId);
     if (!debate || !debate.is_active) return;
-    if (debate.user_vote === side) return;
 
     const formData = new FormData();
     formData.append("vote_type", side);
@@ -180,14 +177,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (data.changed) {
-      const oldSide = side === 'agree' ? 'disagree' : 'agree';
-      debate[oldSide] -= 1;
+    if (data.removed) {
+      debate[debate.user_vote] -= 1;
       debate.total_votes -= 1;
+      debate.user_vote = null;
+    } else if (data.changed) {
+      const oldSide = debate.user_vote;
+      debate[oldSide] -= 1;
+      debate[side] += 1;
+      debate.user_vote = side;
+    } else {
+      debate[side] += 1;
+      debate.total_votes += 1;
+      debate.user_vote = side;
     }
-    debate[side] += 1;
-    debate.total_votes += 1;
-    debate.user_vote = side;
+
     debate.agree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.agree / debate.total_votes) * 1000) / 10;
     debate.disagree_pct = debate.total_votes === 0 ? 0 : Math.round((debate.disagree / debate.total_votes) * 1000) / 10;
     renderDebates();
@@ -226,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
   debateContainer.addEventListener("click", event => {
     const bookmarkButton = event.target.closest('[data-action="bookmark"]');
     if (bookmarkButton) {
-      event.stopPropagation(); // Prevents the card click from firing
+      event.stopPropagation();
       const card = bookmarkButton.closest(".debate-card");
       toggleBookmark(Number(card.dataset.id));
       return;
@@ -234,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const voteButton = event.target.closest("[data-vote]");
     if (voteButton) {
-      event.stopPropagation(); // Prevents the card click from firing
+      event.stopPropagation();
       const card = voteButton.closest(".debate-card");
       castVote(Number(card.dataset.id), voteButton.dataset.vote);
       return;
