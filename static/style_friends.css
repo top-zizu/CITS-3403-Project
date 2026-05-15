@@ -244,3 +244,72 @@ body.dark-mode .profile-btn {
   color: #e5e7eb;
   border-color: #374151;
 }
+
+/* ── Friend Activity ─────────────────────────────────────────── */
+
+.friends-activity-section {
+  max-width: 900px;
+  margin: 28px auto 0;
+}
+
+.activity-heading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.activity-subheading {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+
+#activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
+}
+
+.activity-pill:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.activity-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.activity-text strong {
+  color: var(--text);
+}
+
+.activity-text em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+body.dark-mode .activity-pill {
+  background: #111827;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+body.dark-mode .activity-text em {
+  color: #60a5fa;
+}

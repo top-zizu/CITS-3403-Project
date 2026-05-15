@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const list = document.getElementById("friends-list");
+  const activityList = document.getElementById("activity-list");
   const tabs = document.querySelectorAll(".friends-tab");
   const searchInput = document.getElementById("friends-search-input");
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
@@ -87,6 +88,48 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
+  function activityLabel(type) {
+    if (type === "vote")    return "voted on";
+    if (type === "comment") return "commented on";
+    if (type === "create")  return "created";
+    return "interacted with";
+  }
+
+  function activityIcon(type) {
+    if (type === "vote")    return "🗳️";
+    if (type === "comment") return "💬";
+    if (type === "create")  return "✏️";
+    return "⚡";
+  }
+
+  function renderActivity(activities) {
+    if (!activityList) return;
+
+    if (!activities.length) {
+      activityList.innerHTML = `<p class="empty-state">No recent activity from people you follow.</p>`;
+      return;
+    }
+
+    activityList.innerHTML = activities.map(a => `
+      <a class="activity-pill" href="${escapeHTML(a.debate_url)}">
+        <span class="activity-icon">${activityIcon(a.type)}</span>
+        <span class="activity-text">
+          <strong>${escapeHTML(a.username)}</strong>
+          ${activityLabel(a.type)}
+          <em>${escapeHTML(a.debate_title)}</em>
+        </span>
+      </a>
+    `).join("");
+  }
+
+  async function loadActivity() {
+    if (!activityList) return;
+    const response = await fetch("/api/activity/friends");
+    if (!response.ok) return;
+    const data = await response.json();
+    renderActivity(data.activities || []);
+  }
+
   async function loadUsers() {
     const params = new URLSearchParams({ tab: currentTab });
     if (searchQuery) params.set("q", searchQuery);
@@ -112,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     await loadUsers();
+    await loadActivity();
   }
 
   tabs.forEach(button => {
@@ -147,4 +191,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadUsers().catch(() => {
     list.innerHTML = `<p class="empty-state">Unable to load users. Please try again.</p>`;
   });
+  loadActivity();
 });
