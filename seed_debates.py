@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app import app
-from models import db, Debate, User, Comment, Vote
+from models import db, Debate, User, Comment, Vote, CommentLike
 
 
 DEMO_USER = {
@@ -59,6 +59,26 @@ DEMO_DEBATES = [
         "duration_hours": 6,
         "agree_votes": 334,
         "disagree_votes": 891,
+    },
+    {
+        "title": "Schools should ban smartphones during class",
+        "description": "Would phone-free classrooms improve learning and attention, or would bans create more problems than they solve?",
+        "category": "education",
+        "expired_days_ago": 2,
+        "agree_votes": 742,
+        "disagree_votes": 418,
+        "winner": "agree",
+        "is_closed": True,
+    },
+    {
+        "title": "Nuclear energy should be central to climate policy",
+        "description": "Should governments prioritise nuclear power as a major clean energy source?",
+        "category": "environment",
+        "expired_days_ago": 5,
+        "agree_votes": 528,
+        "disagree_votes": 611,
+        "winner": "disagree",
+        "is_closed": True,
     },
 ]
 
@@ -178,18 +198,28 @@ def seed_debates():
             skipped += 1
             continue
 
-        duration = timedelta(
-            days=item.get("duration_days", 0),
-            hours=item.get("duration_hours", 0),
-        )
+        if "expired_days_ago" in item or "expired_hours_ago" in item:
+            duration = timedelta(
+                days=item.get("expired_days_ago", 0),
+                hours=item.get("expired_hours_ago", 0),
+            )
+            expires_at = now - duration
+        else:
+            duration = timedelta(
+                days=item.get("duration_days", 0),
+                hours=item.get("duration_hours", 0),
+            )
+            expires_at = now + duration
 
         debate = Debate(
             title=item["title"],
             description=item["description"],
             category=item["category"],
-            expires_at=now + duration,
+            expires_at=expires_at,
             agree_votes=item["agree_votes"],
             disagree_votes=item["disagree_votes"],
+            winner=item.get("winner"),
+            is_closed=item.get("is_closed", False),
             user_id=demo_user.id,
         )
         db.session.add(debate)
@@ -257,16 +287,167 @@ DEMO_COMMENTS = [
             {"username": "logicqueen",    "content": "Texture contrast is a valid complaint. Pineapple releases water when heated and softens everything around it.", "vote": "disagree"},
         ],
     },
+    {
+        "debate_title": "Schools should ban smartphones during class",
+        "comments": [
+            {
+                "username": "mindchanger",
+                "content": "The closed result makes sense to me. A classroom is one of the few places where sustained attention should be protected by default.",
+                "vote": "agree",
+                "likes": ["demo_debater", "logicqueen", "argumentking", "voiceofreason", "contrarymary"],
+                "replies": [
+                    {
+                        "username": "logicqueen",
+                        "content": "I agree with the principle, but a blanket ban needs careful exceptions for accessibility, medical alerts, and students with caring responsibilities.",
+                        "vote": "agree",
+                        "likes": ["demo_debater", "argumentking", "voiceofreason", "contrarymary", "mindchanger"],
+                    },
+                    {
+                        "username": "voiceofreason",
+                        "content": "The strongest counterpoint is enforcement. If teachers spend ten minutes policing phones every lesson, the policy can eat the attention it was meant to save.",
+                        "vote": None,
+                        "likes": ["demo_debater", "logicqueen", "argumentking", "contrarymary"],
+                    },
+                    {
+                        "username": "argumentking",
+                        "content": "Teaching responsible use is better than pretending phones do not exist. Students need self-regulation skills before they leave school.",
+                        "vote": "disagree",
+                        "likes": ["demo_debater", "logicqueen", "voiceofreason"],
+                    },
+                    {
+                        "username": "contrarymary",
+                        "content": "Bans usually hit responsible students hardest while the determined rule-breakers just get better at hiding it.",
+                        "vote": "disagree",
+                        "likes": ["logicqueen", "voiceofreason"],
+                    },
+                ],
+            },
+            {
+                "username": "argumentking",
+                "content": "The vote went the wrong way. Schools should model good technology habits instead of building a tiny prohibition system.",
+                "vote": "disagree",
+                "likes": ["demo_debater", "voiceofreason", "contrarymary", "mindchanger"],
+                "replies": [
+                    {
+                        "username": "logicqueen",
+                        "content": "Modelling habits matters, but younger students are not choosing on equal footing against apps designed to pull attention.",
+                        "vote": "agree",
+                        "likes": ["demo_debater", "voiceofreason", "mindchanger"],
+                    },
+                    {
+                        "username": "voiceofreason",
+                        "content": "Maybe the distinction should be phones away during instruction, available during breaks, with clear exceptions.",
+                        "vote": None,
+                        "likes": ["demo_debater", "logicqueen", "contrarymary"],
+                    },
+                ],
+            },
+            {
+                "username": "voiceofreason",
+                "content": "I would rather see a structured phone policy than a pure ban. The goal is attention, not punishment.",
+                "vote": None,
+                "likes": ["logicqueen", "argumentking", "mindchanger"],
+            },
+            {
+                "username": "logicqueen",
+                "content": "The evidence from schools that use phone lockers is pretty persuasive: fewer disruptions, more face-to-face interaction, and calmer breaks.",
+                "vote": "agree",
+                "likes": ["demo_debater", "voiceofreason", "mindchanger"],
+            },
+        ],
+    },
+    {
+        "debate_title": "Nuclear energy should be central to climate policy",
+        "comments": [
+            {"username": "contrarymary", "content": "The result reflects the practical issue: nuclear is slow and expensive compared with renewables plus storage.", "vote": "disagree", "likes": ["argumentking", "voiceofreason", "mindchanger"]},
+            {"username": "logicqueen", "content": "I still think the debate underrates firm low-carbon power. Grid reliability matters when the weather does not cooperate.", "vote": "agree", "likes": ["demo_debater", "voiceofreason"]},
+            {"username": "voiceofreason", "content": "The answer probably depends on country context: existing expertise, regulation, geography, and public trust.", "vote": None, "likes": ["logicqueen", "argumentking"]},
+        ],
+    },
 ]
 
 
 def seed_comments():
     social_users = {u["username"]: User.query.filter_by(username=u["username"]).first()
                     for u in DEMO_SOCIAL_USERS}
+    social_users[DEMO_USER["username"]] = get_or_create_demo_user()
 
     created_comments = 0
     created_votes = 0
+    created_likes = 0
     skipped = 0
+
+    def ensure_vote(user, debate, vote_type):
+        nonlocal created_votes
+        if not vote_type:
+            return
+
+        existing_vote = Vote.query.filter_by(
+            user_id=user.id, debate_id=debate.id
+        ).first()
+        if existing_vote:
+            return
+
+        vote = Vote(
+            user_id=user.id,
+            debate_id=debate.id,
+            vote_type=vote_type,
+        )
+        if vote_type == "agree":
+            debate.agree_votes += 1
+        else:
+            debate.disagree_votes += 1
+        db.session.add(vote)
+        created_votes += 1
+
+    def ensure_comment(item, debate, parent=None):
+        nonlocal created_comments, skipped
+        user = social_users.get(item["username"])
+        if not user:
+            return None
+
+        ensure_vote(user, debate, item.get("vote"))
+
+        existing = Comment.query.filter_by(
+            user_id=user.id,
+            debate_id=debate.id,
+            content=item["content"],
+            parent_comment_id=parent.id if parent else None,
+        ).first()
+        if existing:
+            skipped += 1
+            return existing
+
+        comment = Comment(
+            user_id=user.id,
+            debate_id=debate.id,
+            content=item["content"],
+            parent_comment_id=parent.id if parent else None,
+        )
+        db.session.add(comment)
+        db.session.flush()
+        created_comments += 1
+        return comment
+
+    def ensure_likes(comment, like_usernames):
+        nonlocal created_likes
+        if not comment:
+            return
+
+        for username in like_usernames:
+            user = social_users.get(username)
+            if not user:
+                continue
+
+            existing_like = CommentLike.query.filter_by(
+                user_id=user.id,
+                comment_id=comment.id,
+            ).first()
+            if existing_like:
+                continue
+
+            db.session.add(CommentLike(user_id=user.id, comment_id=comment.id))
+            created_likes += 1
 
     for debate_data in DEMO_COMMENTS:
         debate = Debate.query.filter_by(title=debate_data["debate_title"]).first()
@@ -275,47 +456,24 @@ def seed_comments():
             continue
 
         for item in debate_data["comments"]:
-            user = social_users.get(item["username"])
-            if not user:
+            comment = ensure_comment(item, debate)
+            ensure_likes(comment, item.get("likes", []))
+
+            if not comment:
                 continue
 
-            existing = Comment.query.filter_by(
-                user_id=user.id,
-                debate_id=debate.id,
-                content=item["content"],
-            ).first()
-            if existing:
-                skipped += 1
-                continue
-
-            if item["vote"]:
-                existing_vote = Vote.query.filter_by(
-                    user_id=user.id, debate_id=debate.id
-                ).first()
-                if not existing_vote:
-                    vote = Vote(
-                        user_id=user.id,
-                        debate_id=debate.id,
-                        vote_type=item["vote"],
-                    )
-                    if item["vote"] == "agree":
-                        debate.agree_votes += 1
-                    else:
-                        debate.disagree_votes += 1
-                    db.session.add(vote)
-                    created_votes += 1
-
-            comment = Comment(
-                user_id=user.id,
-                debate_id=debate.id,
-                content=item["content"],
-                parent_comment_id=None,
-            )
-            db.session.add(comment)
-            created_comments += 1
+            for reply_data in item.get("replies", []):
+                reply = ensure_comment(reply_data, debate, parent=comment)
+                ensure_likes(reply, reply_data.get("likes", []))
 
     db.session.commit()
-    print(f"Comment seed complete: {created_comments} comments created, {created_votes} votes created, {skipped} skipped.")
+    print(
+        "Comment seed complete: "
+        f"{created_comments} comments created, "
+        f"{created_votes} votes created, "
+        f"{created_likes} likes created, "
+        f"{skipped} skipped."
+    )
 
 
 if __name__ == "__main__":

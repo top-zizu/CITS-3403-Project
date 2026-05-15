@@ -155,8 +155,8 @@
     </div>
 
     <div class="stance-tabs">
-      <button class="stance-tab blue active" onclick="setStance('blue', this)">Blue (Agree)</button>
-      <button class="stance-tab red"         onclick="setStance('red', this)">Red (Disagree)</button>
+      <button class="stance-tab blue active" onclick="setStance('blue', this)">Agree</button>
+      <button class="stance-tab red"         onclick="setStance('red', this)">Disagree</button>
       <button class="stance-tab neutral"     onclick="setStance('neutral', this)">Neutral</button>
     </div>
 
@@ -180,8 +180,9 @@
   const IS_ACTIVE   = {{ 'true' if debate.is_active else 'false' }};
   const IS_REVEALED = {{ 'true' if vote_data.revealed else 'false' }};
   const CSRF_TOKEN  = document.querySelector('meta[name="csrf-token"]').content;
+  const CURRENT_USERNAME = {% if current_user.is_authenticated %}{{ current_user.username | tojson }}{% else %}null{% endif %};
 
-  let stance    = 'blue';
+  let activeCommentFilter = 'blue';
   let voted     = {{ 'true' if user_vote else 'false' }};
   let votedSide = {{ ('"' + user_vote.vote_type + '"') | safe if user_vote else 'null' }};
   let agree     = {{ debate.agree_votes }};
@@ -217,9 +218,37 @@
   let comments = JSON.parse(JSON.stringify(INITIAL_COMMENTS));
 
   function setStance(s, btn) {
-    stance = s;
+    activeCommentFilter = s;
     document.querySelectorAll('.stance-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+    renderComments();
+  }
+
+  function stanceFromVote(side) {
+    return side === 'agree' ? 'blue' : side === 'disagree' ? 'red' : 'neutral';
+  }
+
+  function updateAuthoredCommentStances(newStance) {
+    if (!CURRENT_USERNAME) return;
+
+    comments.forEach(comment => {
+      if (comment.author === CURRENT_USERNAME) comment.stance = newStance;
+      (comment.replies || []).forEach(reply => {
+        if (reply.author === CURRENT_USERNAME) reply.stance = newStance;
+      });
+    });
+  }
+
+  function refreshVoteDisplay() {
+    document.getElementById('agree-panel').classList.toggle('voted', votedSide === 'agree');
+    document.getElementById('disagree-panel').classList.toggle('voted', votedSide === 'disagree');
+
+    const total = agree + disagree;
+    document.getElementById('agree-count').textContent    = IS_REVEALED ? agree : '?';
+    document.getElementById('disagree-count').textContent = IS_REVEALED ? disagree : '?';
+    document.getElementById('agree-pct').textContent      = IS_REVEALED ? (total ? (agree / total * 100).toFixed(1) + '%' : '0%') : '–';
+    document.getElementById('disagree-pct').textContent   = IS_REVEALED ? (total ? (disagree / total * 100).toFixed(1) + '%' : '0%') : '–';
+    document.getElementById('progress-blue').style.width  = IS_REVEALED && total ? (agree / total * 100) + '%' : '50%';
   }
 
   function castVote(side) {
@@ -236,6 +265,19 @@
     .then(r => r.json())
     .then(data => {
       if (data.error) { alert(data.error); return; }
+
+      if (data.removed) {
+        if (side === 'agree') agree--;
+        else disagree--;
+
+        voted = false;
+        votedSide = null;
+        updateAuthoredCommentStances('neutral');
+        refreshVoteDisplay();
+        renderComments();
+        return;
+      }
+
       if (data.changed) {
         if (votedSide === 'agree') agree--;
         else disagree--;
@@ -244,14 +286,9 @@
       votedSide = side;
       if (side === 'agree') agree++;
       else disagree++;
-      document.getElementById('agree-panel').classList.toggle('voted', side === 'agree');
-      document.getElementById('disagree-panel').classList.toggle('voted', side === 'disagree');
-      const total = agree + disagree;
-      document.getElementById('agree-count').textContent    = agree;
-      document.getElementById('disagree-count').textContent = disagree;
-      document.getElementById('agree-pct').textContent      = total ? (agree / total * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('disagree-pct').textContent   = total ? (disagree / total * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('progress-blue').style.width  = total ? (agree / total * 100) + '%' : '50%';
+      updateAuthoredCommentStances(stanceFromVote(side));
+      refreshVoteDisplay();
+      renderComments();
     })
     .catch(() => alert('Something went wrong. Please try again.'));
   }
@@ -374,6 +411,35 @@
     return s === 'blue' ? 'Agree' : s === 'red' ? 'Disagree' : 'Neutral';
   }
 
+  function compareByLikes(a, b) {
+    if (b.likes !== a.likes) return b.likes - a.likes;
+    return b.id - a.id;
+  }
+
+  function compareByActiveFilter(a, b) {
+    const aMatches = a.stance === activeCommentFilter;
+    const bMatches = b.stance === activeCommentFilter;
+
+    if (aMatches !== bMatches) return aMatches ? -1 : 1;
+    return compareByLikes(a, b);
+  }
+
+  function sortedRepliesFor(comment) {
+    const replies = [...(comment.replies || [])];
+    const bestContrastingReply = replies
+      .filter(reply => reply.stance !== comment.stance)
+      .sort(compareByLikes)[0];
+
+    if (!bestContrastingReply) return replies.sort(compareByLikes);
+
+    return [
+      bestContrastingReply,
+      ...replies
+        .filter(reply => reply.id !== bestContrastingReply.id)
+        .sort(compareByLikes),
+    ];
+  }
+
   function buildComment(c, isReply = false, parentId = null) {
     return `
       <div class="comment ${c.stance}" id="comment-${c.id}">
@@ -404,7 +470,7 @@
             <button class="reply-post-btn" onclick="postReply(${c.id})">Reply</button>
           </div>
           <div class="replies">
-            ${c.replies.map(r => buildComment(r, true, c.id)).join('')}
+            ${sortedRepliesFor(c).map(r => buildComment(r, true, c.id)).join('')}
           </div>
         ` : ''}
       </div>
@@ -413,7 +479,7 @@
 
   function renderComments() {
     document.getElementById('comments-list').innerHTML =
-      comments.map(c => buildComment(c)).join('');
+      [...comments].sort(compareByActiveFilter).map(c => buildComment(c)).join('');
     document.getElementById('comment-count').textContent = comments.length;
   }
 

@@ -5,7 +5,7 @@
   const CSRF_TOKEN  = document.querySelector('meta[name="csrf-token"]').content;
 
   /* ── Vote state ── */
-  let stance  = 'blue';
+  let activeCommentFilter = 'blue';
   let voted   = {{ 'true' if user_vote else 'false' }};
   let votedSide = {{ ('"' + user_vote.vote_type + '"') | safe if user_vote else 'null' }};
   let agree   = {{ debate.agree_votes }};
@@ -44,15 +44,15 @@
 
   /* ── Stance tabs ── */
   function setStance(s, btn) {
-    stance = s;
+    activeCommentFilter = s;
     document.querySelectorAll('.stance-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+    renderComments();
   }
 
   /* ── Vote — calls Flask AJAX ── */
   function castVote(side) {
     if (!IS_ACTIVE) { alert('This debate has closed — voting is no longer allowed.'); return; }
-    if (voted)      { alert('You have already voted on this debate.'); return; }
 
     fetch(`/debates/${DEBATE_ID}/vote`, {
       method: 'POST',
@@ -65,6 +65,19 @@
     .then(r => r.json())
     .then(data => {
       if (data.error) { alert(data.error); return; }
+      if (data.removed) {
+        if (side === 'agree') agree--;
+        else disagree--;
+        voted = false;
+        votedSide = null;
+        document.getElementById('agree-panel').classList.remove('voted');
+        document.getElementById('disagree-panel').classList.remove('voted');
+        return;
+      }
+      if (data.changed) {
+        if (votedSide === 'agree') agree--;
+        else disagree--;
+      }
       voted     = true;
       votedSide = side;
       if (side === 'agree') agree++;
@@ -118,7 +131,7 @@
       comments.unshift({
         id: data.comment_id,
         author: data.username,
-        stance,
+        stance: data.stance,
         time: data.created_at,
         text: data.content,
         likes: 0,
@@ -153,7 +166,7 @@
         parent.replies.push({
           id: data.comment_id,
           author: data.username,
-          stance,
+          stance: data.stance,
           time: data.created_at,
           text: data.content,
           likes: 0,
@@ -201,6 +214,19 @@
     return s === 'blue' ? 'Agree' : s === 'red' ? 'Disagree' : 'Neutral';
   }
 
+  function compareByLikes(a, b) {
+    if (b.likes !== a.likes) return b.likes - a.likes;
+    return b.id - a.id;
+  }
+
+  function compareByActiveFilter(a, b) {
+    const aMatches = a.stance === activeCommentFilter;
+    const bMatches = b.stance === activeCommentFilter;
+
+    if (aMatches !== bMatches) return aMatches ? -1 : 1;
+    return compareByLikes(a, b);
+  }
+
   function buildComment(c, isReply = false, parentId = null) {
     return `
       <div class="comment ${c.stance}" id="comment-${c.id}">
@@ -240,7 +266,7 @@
 
   function renderComments() {
     document.getElementById('comments-list').innerHTML =
-      comments.map(c => buildComment(c)).join('');
+      [...comments].sort(compareByActiveFilter).map(c => buildComment(c)).join('');
     document.getElementById('comment-count').textContent = comments.length;
   }
 

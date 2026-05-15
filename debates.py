@@ -190,7 +190,16 @@ def cast_vote(debate_id):
 
     if existing:
         if existing.vote_type == vote_type:
-            return jsonify({'error': 'You have already voted this way on this debate.'}), 400
+            if vote_type == 'agree':
+                debate.agree_votes -= 1
+            else:
+                debate.disagree_votes -= 1
+
+            current_user.reputation_score = max(0, current_user.reputation_score - 5)
+            db.session.delete(existing)
+            db.session.commit()
+
+            return jsonify({'success': True, 'removed': True, 'total': debate.total_votes})
 
         # Reverse the old counter, apply the new one
         if existing.vote_type == 'agree':
@@ -206,7 +215,7 @@ def cast_vote(debate_id):
         existing.vote_type = vote_type
         db.session.commit()
 
-        return jsonify({'success': True, 'changed': True, 'total': debate.total_votes})
+        return jsonify({'success': True, 'changed': True, 'removed': False, 'total': debate.total_votes})
 
     # First-time vote
     vote = Vote(
@@ -227,9 +236,9 @@ def cast_vote(debate_id):
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({'error': 'You have already voted on this debate.'}), 400
+        return jsonify({'error': 'Vote could not be saved. Please refresh and try again.'}), 400
 
-    return jsonify({'success': True, 'changed': False, 'total': debate.total_votes})
+    return jsonify({'success': True, 'changed': False, 'removed': False, 'total': debate.total_votes})
 
 
 # ============================================================
