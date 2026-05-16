@@ -35,6 +35,17 @@ TAG_ICON_TYPES = {
     "general": "tag",
 }
 
+LEADERBOARD_COLORS = [
+    "#f59e0b",
+    "#6366f1",
+    "#2563eb",
+    "#10b981",
+    "#ec4899",
+    "#ef4444",
+    "#8b5cf6",
+    "#14b8a6",
+]
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -126,6 +137,22 @@ def _tag_icon_type(category):
     return TAG_ICON_TYPES.get((category or "").strip().lower(), "tag")
 
 
+def _leaderboard_color(username):
+    if not username:
+        return LEADERBOARD_COLORS[0]
+    index = sum(ord(char) for char in username) % len(LEADERBOARD_COLORS)
+    return LEADERBOARD_COLORS[index]
+
+
+def _leaderboard_badge(conformity_score):
+    score = conformity_score or 0
+    if score >= 60:
+        return "Conformist"
+    if score < 40:
+        return "Contrarian"
+    return "Moderate"
+
+
 def _debate_to_dict(debate):
     total = debate.total_votes
     agree_pct = round((debate.agree_votes / total) * 100, 1) if total else 0
@@ -188,26 +215,15 @@ def api_debate_comments(debate_id):
             .all()
         )
 
-    all_author_ids = {c.user_id for c in top_level}
-    for c in top_level:
-        for r in c.replies:
-            all_author_ids.add(r.user_id)
-
-    votes_on_debate = Vote.query.filter_by(debate_id=debate_id).filter(
-        Vote.user_id.in_(all_author_ids)
-    ).all()
-    stance_map = {'agree': 'blue', 'disagree': 'red'}
-    comment_stances = {v.user_id: stance_map.get(v.vote_type, 'neutral') for v in votes_on_debate}
-
     def comment_sort_key(c):
         return (-len(c.likes), -c.id)
 
     def sorted_replies_for(c):
         replies = list(c.replies)
-        parent_stance = comment_stances.get(c.user_id, 'neutral')
+        parent_stance = c.stance or 'neutral'
         contrasting_replies = [
             r for r in replies
-            if comment_stances.get(r.user_id, 'neutral') != parent_stance
+            if (r.stance or 'neutral') != parent_stance
         ]
 
         if not contrasting_replies:
@@ -224,7 +240,7 @@ def api_debate_comments(debate_id):
         return {
             "id": c.id,
             "author": c.author.username,
-            "stance": comment_stances.get(c.user_id, 'neutral'),
+            "stance": c.stance or 'neutral',
             "time": c.created_at.strftime('%d %b %Y, %H:%M'),
             "text": c.content,
             "likes": len(c.likes),
@@ -486,18 +502,6 @@ def debate_detail(debate_id):
             .all()
         )
 
-    # Build stance map: commenter user_id -> 'blue'|'red'|'neutral'
-    all_author_ids = {c.user_id for c in top_level_comments}
-    for c in top_level_comments:
-        for r in c.replies:
-            all_author_ids.add(r.user_id)
-
-    votes_on_debate = Vote.query.filter_by(debate_id=debate_id).filter(
-        Vote.user_id.in_(all_author_ids)
-    ).all()
-    stance_map = {'agree': 'blue', 'disagree': 'red'}
-    comment_stances = {v.user_id: stance_map.get(v.vote_type, 'neutral') for v in votes_on_debate}
-
     user_vote = None
     is_bookmarked = False
     if current_user.is_authenticated:
@@ -515,7 +519,6 @@ def debate_detail(debate_id):
         comments=top_level_comments,
         user_vote=user_vote,
         is_bookmarked=is_bookmarked,
-        comment_stances=comment_stances,
     )
 
 
@@ -539,42 +542,11 @@ def toggle_bookmark(debate_id):
 
 @app.route("/leaderboard")
 def leaderboard():
-    """
-    sort:   most_active (default) | most_distinctive | most_wins
-    period: all_time (default)   | this_week        | this_month
-    """
-    sort   = request.args.get('sort', 'most_active')
-    period = request.args.get('period', 'all_time')
-
-    now   = datetime.now(timezone.utc)
-    query = User.query
-
-    if period in ('this_week', 'this_month'):
-        days   = 7 if period == 'this_week' else 30
-        cutoff = now - timedelta(days=days)
-
-        voted_ids     = {v.user_id for v in Vote.query.filter(Vote.created_at    >= cutoff).all()}
-        commented_ids = {c.user_id for c in Comment.query.filter(Comment.created_at >= cutoff).all()}
-        created_ids   = {d.user_id for d in Debate.query.filter(Debate.created_at  >= cutoff).all()}
-        active_ids    = voted_ids | commented_ids | created_ids
-
-        if not active_ids:
-            return render_template('leaderboard.html', users=[], sort=sort, period=period)
-
-        query = query.filter(User.id.in_(active_ids))
-
-    if sort == 'most_distinctive':
-        query = query.order_by(User.conformity_score.asc())
-    elif sort == 'most_wins':
-        query = query.order_by(User.debates_won.desc())
-    else:
-        query = query.order_by(User.reputation_score.desc())
-
-    return render_template('leaderboard.html', users=query.all(), sort=sort, period=period)
+    return render_template('leaderboard.html')
 
 @app.route("/api/leaderboard")
 def api_leaderboard():
-    sort   = request.args.get('sort', 'most_active')
+    sort   = request.args.get('sort', 'points')
     period = request.args.get('period', 'all_time')
 
     now   = datetime.now(timezone.utc)
@@ -591,30 +563,41 @@ def api_leaderboard():
             return jsonify({"users": [], "sort": sort, "period": period})
         query = query.filter(User.id.in_(active_ids))
 
-    if sort == 'most_distinctive':
-        query = query.order_by(User.conformity_score.asc())
-    elif sort == 'most_wins':
-        query = query.order_by(User.debates_won.desc())
+    if sort in ('distinctive', 'most_distinctive'):
+        query = query.order_by(
+            db.func.coalesce(User.conformity_score, 0).asc(),
+            User.reputation_score.desc(),
+            User.username.asc(),
+        )
     else:
-        query = query.order_by(User.reputation_score.desc())
-
-    def badge(user):
-        if user.conformity_score >= 60:
-            return 'Conformist'
-        if user.conformity_score < 40:
-            return 'Contrarian'
-        return 'Moderate'
+        query = query.order_by(User.reputation_score.desc(), User.username.asc())
 
     users = query.all()
+
+    def user_to_leaderboard_row(user):
+        vote_count = Vote.query.filter_by(user_id=user.id).count()
+        comment_count = Comment.query.filter_by(user_id=user.id).count()
+        debate_count = Debate.query.filter_by(user_id=user.id).count()
+        conformity = round(user.conformity_score or 0, 1)
+
+        return {
+            "id": user.username,
+            "name": user.username,
+            "username": user.username,
+            "profile_url": url_for("profile", username=user.username),
+            "meta": f"{vote_count} vote{'s' if vote_count != 1 else ''} - {comment_count} comment{'s' if comment_count != 1 else ''}",
+            "votes": vote_count,
+            "comments": comment_count,
+            "points": user.reputation_score or 0,
+            "debates": debate_count,
+            "badge": _leaderboard_badge(conformity),
+            "conformity": conformity,
+            "color": _leaderboard_color(user.username),
+            "you": current_user.is_authenticated and user.id == current_user.id,
+        }
+
     return jsonify({
-        "users": [{
-            "username": u.username,
-            "profile_url": url_for("profile", username=u.username),
-            "points": u.reputation_score,
-            "debates": u.debates_won + u.debates_lost,
-            "conformity": u.conformity_score,
-            "badge": badge(u),
-        } for u in users],
+        "users": [user_to_leaderboard_row(user) for user in users],
         "sort": sort,
         "period": period,
     })
