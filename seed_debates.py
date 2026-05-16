@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import text
+
 from app import app
 from models import db, Debate, User, Comment, Vote, CommentLike
+
+CURRENT_ALEMBIC_HEAD = "8b8a7c4d2f1e"
 
 
 DEMO_USER = {
@@ -81,6 +85,49 @@ DEMO_DEBATES = [
         "is_closed": True,
     },
 ]
+
+
+def ensure_schema_compatibility():
+    comment_columns = {
+        column["name"]
+        for column in db.session.execute(text("PRAGMA table_info(comment)")).mappings()
+    }
+
+    if "stance" not in comment_columns:
+        db.session.execute(
+            text("ALTER TABLE comment ADD COLUMN stance VARCHAR(20) NOT NULL DEFAULT 'neutral'")
+        )
+
+    db.session.execute(text("""
+        UPDATE comment
+        SET stance = CASE (
+            SELECT vote.vote_type
+            FROM vote
+            WHERE vote.user_id = comment.user_id
+              AND vote.debate_id = comment.debate_id
+            LIMIT 1
+        )
+            WHEN 'agree' THEN 'blue'
+            WHEN 'disagree' THEN 'red'
+            ELSE COALESCE(stance, 'neutral')
+        END
+    """))
+
+    db.session.execute(text("""
+        CREATE TABLE IF NOT EXISTS alembic_version (
+            version_num VARCHAR(32) NOT NULL,
+            CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+        )
+    """))
+    existing_revision = db.session.execute(text("SELECT version_num FROM alembic_version")).scalar()
+    if existing_revision != CURRENT_ALEMBIC_HEAD:
+        db.session.execute(text("DELETE FROM alembic_version"))
+        db.session.execute(
+            text("INSERT INTO alembic_version (version_num) VALUES (:revision)"),
+            {"revision": CURRENT_ALEMBIC_HEAD},
+        )
+
+    db.session.commit()
 
 
 DEMO_SOCIAL_USERS = [
@@ -400,6 +447,12 @@ def seed_comments():
         db.session.add(vote)
         created_votes += 1
 
+    def stance_for(user, debate):
+        vote = Vote.query.filter_by(user_id=user.id, debate_id=debate.id).first()
+        if not vote:
+            return "neutral"
+        return "blue" if vote.vote_type == "agree" else "red"
+
     def ensure_comment(item, debate, parent=None):
         nonlocal created_comments, skipped
         user = social_users.get(item["username"])
@@ -422,6 +475,7 @@ def seed_comments():
             user_id=user.id,
             debate_id=debate.id,
             content=item["content"],
+            stance=stance_for(user, debate),
             parent_comment_id=parent.id if parent else None,
         )
         db.session.add(comment)
@@ -479,6 +533,7 @@ def seed_comments():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        ensure_schema_compatibility()
         seed_debates()
         seed_social_graph()
         seed_comments()
