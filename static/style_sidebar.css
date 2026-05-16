@@ -11,6 +11,28 @@
   overflow-x: hidden;
   z-index: 900;
   transition: width 0.2s ease;
+
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+/* Webkit Scrollbar */
+
+.dh-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dh-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dh-sidebar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}
+
+.dh-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 .sidebar-toggle {
@@ -23,6 +45,12 @@
   cursor: pointer;
   font-size: 1.1rem;
   margin-bottom: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
 }
 
 .sidebar-section {
@@ -42,6 +70,7 @@
   font-size: 0.92rem;
   font-weight: 500;
   transition: background 0.15s ease, color 0.15s ease;
+  min-height: 42px;
 }
 
 .sidebar-link:hover,
@@ -65,6 +94,26 @@
   margin: 16px 0;
 }
 
+/* Sidebar Icons */
+
+.dh-sidebar svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dh-sidebar.collapsed .sidebar-link svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Collapsed Sidebar */
+
 .dh-sidebar.collapsed {
   width: 72px;
 }
@@ -78,6 +127,8 @@
 .dh-sidebar.collapsed .sidebar-divider {
   display: none;
 }
+
+/* Main Layout */
 
 body.sidebar-open main {
   width: calc(100% - 260px);
@@ -93,9 +144,56 @@ body.sidebar-collapsed main {
   transition: margin-left 0.2s ease, width 0.2s ease;
 }
 
-/* DARK MODE */
+/* Notification Dot */
 
-/* body.dark-mode .dh-sidebar {
+.sidebar-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-unread-dot {
+  display: none;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  background-color: #2563eb;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  z-index: 10;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .dh-sidebar {
+    width: 72px;
+  }
+
+  .dh-sidebar .sidebar-link {
+    justify-content: center;
+  }
+
+  .dh-sidebar .sidebar-link span,
+  .dh-sidebar .sidebar-label,
+  .dh-sidebar .sidebar-divider {
+    display: none;
+  }
+
+  body.sidebar-open main,
+  body.sidebar-collapsed main {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+}
+
+/* Optional Dark Mode */
+
+/*
+body.dark-mode .dh-sidebar {
   background: #111827;
   border-right: 1px solid #1f2937;
 }
@@ -122,94 +220,5 @@ body.dark-mode .sidebar-label {
 
 body.dark-mode .sidebar-divider {
   background: #374151;
-} */
-
-@media (max-width: 900px) {
-  .dh-sidebar {
-    width: 72px;
-  }
-
-  .dh-sidebar .sidebar-link {
-    justify-content: center;
-  }
-
-  .dh-sidebar .sidebar-link span,
-  .dh-sidebar .sidebar-label,
-  .dh-sidebar .sidebar-divider {
-    display: none;
-  }
-
-  body.sidebar-open main,
-  body.sidebar-collapsed main {
-    margin-left: 72px;
-  }
 }
-
-.dh-sidebar svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.sidebar-toggle svg {
-  width: 20px;
-  height: 20px;
-}
-
-.sidebar-link {
-  min-height: 42px;
-}
-
-.dh-sidebar.collapsed .sidebar-link svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* Sidebar scrollbar */
-
-.dh-sidebar {
-  scrollbar-width: auto;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.dh-sidebar::-webkit-scrollbar {
-  width: 5px;
-}
-
-.dh-sidebar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dh-sidebar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.dh-sidebar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-  background-clip: padding-box;
-}
-
-/* Container for the icon and the dot */
-.sidebar-icon-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* The Blue Dot */
-.sidebar-unread-dot {
-  display: none; /* Hidden by default, JS will show it */
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 9px;
-  height: 9px;
-  background-color: #2563eb; /* Bright Blue */
-  border-radius: 50%;
-  border: 2px solid var(--surface); /* Creates a clean gap around the dot */
-  z-index: 10;
-}
+*/
