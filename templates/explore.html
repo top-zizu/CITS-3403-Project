@@ -29,12 +29,12 @@
 
   <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='searchdebates.css') }}"
-  >
-  
-  <link 
-    rel="stylesheet" 
     href="{{ url_for('static', filename='style_searchdebates.css') }}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style_debatecards.css') }}"
   >
 
   <script
@@ -47,19 +47,27 @@
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg px-5 py-3">
+    
     <a href="{{ url_for('homepage') }}" class="nav-brand">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round">
-  
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
         <polyline points="16 7 22 7 22 13"/>
       </svg>
-  
+
       DebateHub
     </a>
 
     <div class="ms-auto d-flex align-items-center gap-3">
+
       <a
         href="{{ url_for('login') }}"
         class="text-primary fw-semibold text-decoration-none"
@@ -73,7 +81,9 @@
       >
         Sign Up
       </a>
+
     </div>
+
   </nav>
 
   <!-- Main Content -->
@@ -81,38 +91,61 @@
 
     <!-- Header -->
     <section class="search-header">
+
       <h1>Explore Debates</h1>
 
       <p>
         Browse trending discussions and discover diverse perspectives from the community.
       </p>
+
     </section>
 
     <!-- Search -->
     <section class="search-controls">
 
-      <input
-        id="search-input"
-        class="search-input"
-        type="text"
-        placeholder="Search debates..."
-      >
+      <div class="search-wrap">
+
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+
+        <input
+          id="search-input"
+          class="search-input"
+          type="text"
+          placeholder="Search debates..."
+        >
+
+      </div>
 
       <div class="filter-label">
         Filter by Tags
       </div>
 
-      <div id="filter-tags" class="filter-tags"></div>
+      <div
+        id="filter-tags"
+        class="filter-tags"
+      ></div>
 
     </section>
 
-    <!-- Section -->
+    <!-- Section Heading -->
     <section class="section-heading">
+
       <h2>Trending Debates</h2>
 
       <p>
         Explore what the community is discussing right now.
       </p>
+
     </section>
 
     <!-- Debate Cards -->
@@ -132,7 +165,10 @@
   </main>
 
   <!-- Login Popup -->
-  <div id="login-popup" class="login-popup hidden">
+  <div
+    id="login-popup"
+    class="login-popup hidden"
+  >
 
     <div class="login-popup-card">
 

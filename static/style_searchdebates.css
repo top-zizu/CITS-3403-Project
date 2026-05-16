@@ -4,6 +4,44 @@ main {
   padding: 0 16px;
 }
 
+/* ── Explore/Search Page Layout ─────────────────────────── */
+
+.search-page {
+  max-width: 680px;
+  margin: 40px auto 80px;
+  padding: 0 16px;
+}
+
+.search-header {
+  margin-bottom: 24px;
+}
+
+.search-header h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+
+.search-header p {
+  color: var(--text);
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.search-controls {
+  margin-bottom: 32px;
+}
+
+.debates {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Page Header ─────────────────────────────────────────── */
+
 .page-header {
   margin-bottom: 24px;
 }
@@ -117,7 +155,7 @@ main {
   color: #fff;
 }
 
-/* ── Section heading ─────────────────────────────────────── */
+/* ── Section Heading ─────────────────────────────────────── */
 
 .section-heading {
   margin-bottom: 16px;
@@ -135,7 +173,7 @@ main {
   color: var(--muted);
 }
 
-/* ── Empty state ─────────────────────────────────────────── */
+/* ── Empty State ─────────────────────────────────────────── */
 
 .empty-state {
   text-align: center;
@@ -144,6 +182,8 @@ main {
   font-size: .9rem;
   display: none;
 }
+
+/* ── Sidebar Compatibility ───────────────────────────────── */
 
 body.sidebar-open main,
 body.sidebar-collapsed main {
@@ -155,4 +195,95 @@ body.sidebar-collapsed main > * {
   max-width: 980px;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* ── Login Popup ─────────────────────────────────────────── */
+
+.login-popup {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 9999;
+
+  padding: 20px;
+}
+
+.login-popup.hidden {
+  display: none;
+}
+
+.login-popup-card {
+  width: 100%;
+  max-width: 420px;
+
+  background: white;
+
+  border-radius: 20px;
+
+  padding: 32px 28px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.18),
+    0 8px 24px rgba(0,0,0,.12);
+
+  text-align: center;
+
+  animation: popupFade .2s ease;
+}
+
+.login-popup-card h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+
+  margin-bottom: 12px;
+
+  color: var(--text);
+}
+
+.login-popup-card p {
+  color: var(--muted);
+
+  font-size: .95rem;
+  line-height: 1.5;
+
+  margin-bottom: 24px;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+
+  margin-bottom: 14px;
+}
+
+.popup-actions .btn {
+  min-width: 120px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+#close-popup {
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+
+@keyframes popupFade {
+  from {
+    opacity: 0;
+    transform: scale(.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
