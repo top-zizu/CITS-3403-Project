@@ -448,4 +448,35 @@ body.dark-mode .card {
   body.dark-mode .tag-count {
     color: #9ca3af;
   }
+  /*-------------Debate Cards---------------*/
+  body.dark-mode .debate-card {
+    background: #111827;
+    border-color: #1f2937;
+    color: #e5e7eb;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  body.dark-mode .debate-card:hover {
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+  }
+
+  body.dark-mode .card-prompt,
+  body.dark-mode .debate-card h2 {
+    color: #f9fafb;
+  }
+
+  body.dark-mode .card-timer,
+  body.dark-mode .time,
+  body.dark-mode .comment-link,
+  body.dark-mode .comments-btn {
+    color: #9ca3af;
+  }
+
+  body.dark-mode .card-tag {
+    background: #1f2937;
+    border-color: #374151;
+    color: #d1d5db;
+  }
+
+  
 
