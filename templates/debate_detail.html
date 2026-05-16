@@ -212,9 +212,10 @@
   let comments = JSON.parse(JSON.stringify(INITIAL_COMMENTS));
 
   function setStance(s, btn) {
-    activeCommentFilter = s;
+    const isAlreadySelected = activeCommentFilter === s;
+    activeCommentFilter = isAlreadySelected ? null : s;
     document.querySelectorAll('.stance-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
+    if (!isAlreadySelected) btn.classList.add('active');
     renderComments();
   }
 
@@ -394,6 +395,8 @@
   }
 
   function compareByActiveFilter(a, b) {
+    if (!activeCommentFilter) return compareByLikes(a, b);
+
     const aMatches = a.stance === activeCommentFilter;
     const bMatches = b.stance === activeCommentFilter;
 
