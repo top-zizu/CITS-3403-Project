@@ -4,6 +4,44 @@ main {
   padding: 0 16px;
 }
 
+/* ── Explore/Search Page Layout ─────────────────────────── */
+
+.search-page {
+  max-width: 680px;
+  margin: 40px auto 80px;
+  padding: 0 16px;
+}
+
+.search-header {
+  margin-bottom: 24px;
+}
+
+.search-header h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+
+.search-header p {
+  color: var(--text);
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.search-controls {
+  margin-bottom: 32px;
+}
+
+.debates {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Page Header ─────────────────────────────────────────── */
+
 .page-header {
   margin-bottom: 24px;
 }
@@ -117,7 +155,7 @@ main {
   color: #fff;
 }
 
-/* ── Section heading ─────────────────────────────────────── */
+/* ── Section Heading ─────────────────────────────────────── */
 
 .section-heading {
   margin-bottom: 16px;
@@ -135,7 +173,7 @@ main {
   color: var(--muted);
 }
 
-/* ── Empty state ─────────────────────────────────────────── */
+/* ── Empty State ─────────────────────────────────────────── */
 
 .empty-state {
   text-align: center;
@@ -144,6 +182,8 @@ main {
   font-size: .9rem;
   display: none;
 }
+
+/* ── Sidebar Compatibility ───────────────────────────────── */
 
 body.sidebar-open main,
 body.sidebar-collapsed main {
