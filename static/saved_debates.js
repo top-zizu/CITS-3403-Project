@@ -1,171 +1,278 @@
-/* ── Real data from Flask ── */
-  const DEBATES = [
-    {% for debate in debates %}
-    {
-      id: {{ debate.id }},
-      prompt: {{ debate.title | tojson }},
-      timer: {{ ('Expires ' ~ debate.expires_at.strftime('%d %b') if debate.is_active else 'Ended ' ~ debate.expires_at.strftime('%d %b')) | tojson }},
-      agree:    {{ debate.agree_votes }},
-      disagree: {{ debate.disagree_votes }},
-      comments: {{ debate.comments | length }},
-      tags:     [{{ debate.category | tojson }}],
-      voted:    null,
-    },
-    {% endfor %}
-  ];
+document.addEventListener('DOMContentLoaded', () => {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const debatesList = document.getElementById('debates-list');
+  const emptyState = document.getElementById('empty-state');
+  const searchInput = document.getElementById('search-input');
+  const filterTags = document.getElementById('filter-tags');
 
-  const ALL_TAGS    = ['politics','technology','lifestyle','food','work','animals','sports','entertainment'];
-  let activeFilters = new Set();
-  let searchQuery   = '';
+  let debates = Array.isArray(window.SAVED_DEBATES) ? [...window.SAVED_DEBATES] : [];
+  let searchQuery = '';
+  const activeFilters = new Set();
 
-  function getCsrf() {
-    return document.querySelector('meta[name="csrf-token"]').content;
+  if (!debatesList || !emptyState) return;
+
+  function escapeHTML(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 
-  /* ── Filter tag buttons ── */
-  const filterWrap = document.getElementById('filter-tags');
-  ALL_TAGS.forEach(tag => {
-    const btn = document.createElement('button');
-    btn.className   = 'filter-tag';
-    btn.dataset.tag = tag;
-    btn.innerHTML   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-      <line x1="7" y1="7" x2="7.01" y2="7"/>
-    </svg>${tag}`;
-    btn.addEventListener('click', () => {
-      activeFilters.has(tag) ? activeFilters.delete(tag) : activeFilters.add(tag);
-      btn.classList.toggle('active', activeFilters.has(tag));
-      renderDebates();
-    });
-    filterWrap.appendChild(btn);
-  });
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString();
+  }
 
-  document.getElementById('search-input').addEventListener('input', e => {
-    searchQuery = e.target.value.toLowerCase();
-    renderDebates();
-  });
+  function getCategories() {
+    return [...new Set(debates.flatMap(debate => debate.tags || []))]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+  }
 
-  function getFiltered() {
-    return DEBATES.filter(d => {
-      const matchSearch = !searchQuery || d.prompt.toLowerCase().includes(searchQuery);
-      const matchTags   = activeFilters.size === 0 || d.tags.some(t => activeFilters.has(t));
-      return matchSearch && matchTags;
+  function renderFilterTags() {
+    if (!filterTags) return;
+
+    const categories = getCategories();
+    filterTags.innerHTML = '';
+    filterTags.style.display = categories.length === 0 ? 'none' : 'flex';
+
+    categories.forEach(tag => {
+      const button = document.createElement('button');
+      button.className = `filter-tag ${activeFilters.has(tag) ? 'active' : ''}`;
+      button.dataset.tag = tag;
+      button.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        ${escapeHTML(tag)}
+      `;
+
+      button.addEventListener('click', () => {
+        if (activeFilters.has(tag)) {
+          activeFilters.delete(tag);
+        } else {
+          activeFilters.add(tag);
+        }
+
+        renderFilterTags();
+        renderDebates();
+      });
+
+      filterTags.appendChild(button);
     });
+  }
+
+  function getFilteredDebates() {
+    const query = searchQuery.trim().toLowerCase();
+
+    return debates.filter(debate => {
+      const title = (debate.title || '').toLowerCase();
+      const description = (debate.description || '').toLowerCase();
+      const tags = debate.tags || [];
+      const matchesSearch =
+        !query ||
+        title.includes(query) ||
+        description.includes(query) ||
+        tags.some(tag => tag.toLowerCase().includes(query));
+      const matchesTags =
+        activeFilters.size === 0 ||
+        tags.some(tag => activeFilters.has(tag));
+
+      return matchesSearch && matchesTags;
+    });
+  }
+
+  function createDebateCard(debate, index) {
+    const agreePercent = debate.total_votes === 0 ? 0 : debate.agree_pct;
+    const disagreePercent = debate.total_votes === 0 ? 0 : debate.disagree_pct;
+    const showCounts = !debate.is_active;
+    const card = document.createElement('article');
+
+    card.className = 'debate-card';
+    card.dataset.id = debate.id;
+    card.style.animationDelay = `${index * 60}ms`;
+
+    card.innerHTML = `
+      <button class="save-btn saved" data-action="bookmark" title="Unsave debate">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+      </button>
+
+      <div class="card-timer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        ${escapeHTML(debate.timer)}
+      </div>
+
+      <div class="card-prompt">${escapeHTML(debate.title)}</div>
+
+      <div class="vote-row">
+        <button class="vote-btn agree ${debate.user_vote === 'agree' ? 'voted' : ''}" data-vote="agree" ${!debate.is_active ? 'disabled' : ''}>
+          <div class="vote-label">Agree</div>
+          ${showCounts ? `<div class="vote-count">${formatNumber(debate.agree)}</div><div class="vote-pct">${agreePercent}%</div>` : ''}
+        </button>
+
+        <button class="vote-btn disagree ${debate.user_vote === 'disagree' ? 'voted' : ''}" data-vote="disagree" ${!debate.is_active ? 'disabled' : ''}>
+          <div class="vote-label">Disagree</div>
+          ${showCounts ? `<div class="vote-count">${formatNumber(debate.disagree)}</div><div class="vote-pct">${disagreePercent}%</div>` : ''}
+        </button>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${showCounts ? agreePercent : 50}%"></div>
+      </div>
+
+      <div class="card-footer">
+        <a href="${escapeHTML(debate.url)}" class="comment-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          ${formatNumber(debate.comments)} Comments
+        </a>
+
+        <div class="card-tags">
+          ${(debate.tags || []).map(tag => `
+            <span class="card-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41 11 3H4v7l9.59 9.59a2 2 0 0 0 2.82 0l4.18-4.18a2 2 0 0 0 0-2.82Z"/>
+                <circle cx="7.5" cy="7.5" r=".5"/>
+              </svg>
+              ${escapeHTML(tag)}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    return card;
   }
 
   function renderDebates() {
-    const list     = document.getElementById('debates-list');
-    const empty    = document.getElementById('empty-state');
-    const filtered = getFiltered();
-    list.innerHTML = '';
-    empty.style.display = filtered.length === 0 ? 'block' : 'none';
+    const filtered = getFilteredDebates();
 
-    filtered.forEach((debate, i) => {
-      const total      = debate.agree + debate.disagree;
-      const agreePct   = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
-      const disagreePct = (100 - agreePct).toFixed(1);
+    debatesList.innerHTML = '';
 
-      const card = document.createElement('div');
-      card.className         = 'debate-card';
-      card.style.animationDelay = `${i * 60}ms`;
-      card.innerHTML = `
-        <button class="save-btn saved" onclick="unsave(${debate.id})" title="Unsave debate">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-          </svg>
-        </button>
-        <div class="card-timer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          ${debate.timer}
-        </div>
-        <div class="card-prompt">${debate.prompt}</div>
-        <div class="vote-row">
-          <button class="vote-btn agree ${debate.voted==='agree'?'voted':''}" onclick="vote(${debate.id},'agree')">
-            <div class="vote-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
-                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-              </svg>
-              Agree
-            </div>
-            <div class="vote-count" id="agree-count-${debate.id}">${debate.agree.toLocaleString()}</div>
-            <div class="vote-pct"   id="agree-pct-${debate.id}">${agreePct}%</div>
-          </button>
-          <button class="vote-btn disagree ${debate.voted==='disagree'?'voted':''}" onclick="vote(${debate.id},'disagree')">
-            <div class="vote-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
-                <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
-              </svg>
-              Disagree
-            </div>
-            <div class="vote-count" id="disagree-count-${debate.id}">${debate.disagree.toLocaleString()}</div>
-            <div class="vote-pct"   id="disagree-pct-${debate.id}">${disagreePct}%</div>
-          </button>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="progress-${debate.id}" style="width:${agreePct}%"></div>
-        </div>
-        <div class="card-footer">
-          <a href="/debate/${debate.id}" class="comment-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            ${debate.comments} Comments
-          </a>
-          <div class="card-tags">
-            ${debate.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
-          </div>
-        </div>`;
+    if (filtered.length === 0) {
+      emptyState.textContent = debates.length === 0
+        ? 'No saved debates yet.'
+        : 'No saved debates match your search or filters.';
+      emptyState.style.display = 'block';
+      return;
+    }
 
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', e => {
-        if (!e.target.closest('button') && !e.target.closest('a'))
-          window.location.href = `/debate/${debate.id}`;
-      });
-      list.appendChild(card);
+    emptyState.style.display = 'none';
+    filtered.forEach((debate, index) => {
+      debatesList.appendChild(createDebateCard(debate, index));
     });
   }
 
-  /* ── Local vote display (visual only) ── */
-  function vote(id, side) {
-    const debate = DEBATES.find(d => d.id === id);
-    if (!debate) return;
-    if (debate.voted === side) { debate[side]--; debate.voted = null; }
-    else { if (debate.voted) debate[debate.voted]--; debate[side]++; debate.voted = side; }
-    const total    = debate.agree + debate.disagree;
-    const agreePct = total === 0 ? 50 : ((debate.agree / total) * 100).toFixed(1);
-    document.getElementById(`agree-count-${id}`).textContent    = debate.agree.toLocaleString();
-    document.getElementById(`disagree-count-${id}`).textContent = debate.disagree.toLocaleString();
-    document.getElementById(`agree-pct-${id}`).textContent      = `${agreePct}%`;
-    document.getElementById(`disagree-pct-${id}`).textContent   = `${(100 - agreePct).toFixed(1)}%`;
-    document.getElementById(`progress-${id}`).style.width       = `${agreePct}%`;
-    const card = document.getElementById(`agree-count-${id}`).closest('.debate-card');
-    card.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('voted'));
-    if (debate.voted) card.querySelector(`.vote-btn.${debate.voted}`).classList.add('voted');
-  }
+  async function castVote(debateId, side) {
+    const debate = debates.find(item => item.id === debateId);
+    if (!debate || !debate.is_active) return;
 
-  /* ── Unsave — calls Flask bookmark toggle ── */
-  function unsave(id) {
-    fetch(`/debates/${id}/bookmark`, {
+    const formData = new FormData();
+    formData.append('vote_type', side);
+
+    const response = await fetch(`/debates/${debateId}/vote`, {
       method: 'POST',
-      headers: { 'X-CSRFToken': getCsrf() },
-    })
-    .then(r => r.json())
-    .then(() => {
-      const idx = DEBATES.findIndex(d => d.id === id);
-      if (idx !== -1) DEBATES.splice(idx, 1);
-      renderDebates();
-    })
-    .catch(() => alert('Something went wrong. Please try again.'));
+      headers: { 'X-CSRFToken': csrfToken },
+      body: formData,
+    });
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      alert(data.error || 'Vote failed. Please try again.');
+      return;
+    }
+
+    if (data.removed) {
+      debate[debate.user_vote] -= 1;
+      debate.total_votes -= 1;
+      debate.user_vote = null;
+    } else if (data.changed) {
+      const oldSide = debate.user_vote;
+      debate[oldSide] -= 1;
+      debate[side] += 1;
+      debate.user_vote = side;
+    } else {
+      debate[side] += 1;
+      debate.total_votes += 1;
+      debate.user_vote = side;
+    }
+
+    debate.agree_pct = debate.total_votes === 0
+      ? 0
+      : Math.round((debate.agree / debate.total_votes) * 1000) / 10;
+    debate.disagree_pct = debate.total_votes === 0
+      ? 0
+      : Math.round((debate.disagree / debate.total_votes) * 1000) / 10;
+
+    renderDebates();
   }
 
+  async function toggleBookmark(debateId) {
+    const response = await fetch(`/debates/${debateId}/bookmark`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || 'Save failed. Please try again.');
+      return;
+    }
+
+    if (!data.bookmarked) {
+      debates = debates.filter(debate => debate.id !== debateId);
+      activeFilters.forEach(tag => {
+        if (!getCategories().includes(tag)) activeFilters.delete(tag);
+      });
+      renderFilterTags();
+      renderDebates();
+    }
+  }
+
+  debatesList.addEventListener('click', event => {
+    const bookmarkButton = event.target.closest('[data-action="bookmark"]');
+    if (bookmarkButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const card = bookmarkButton.closest('.debate-card');
+      toggleBookmark(Number(card.dataset.id));
+      return;
+    }
+
+    const voteButton = event.target.closest('[data-vote]');
+    if (voteButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const card = voteButton.closest('.debate-card');
+      castVote(Number(card.dataset.id), voteButton.dataset.vote);
+      return;
+    }
+
+    const card = event.target.closest('.debate-card');
+    if (card && !event.target.closest('a')) {
+      const debate = debates.find(item => item.id === Number(card.dataset.id));
+      if (debate?.url) window.location.href = debate.url;
+    }
+  });
+
+  searchInput?.addEventListener('input', event => {
+    searchQuery = event.target.value;
+    renderDebates();
+  });
+
+  renderFilterTags();
   renderDebates();
+});
