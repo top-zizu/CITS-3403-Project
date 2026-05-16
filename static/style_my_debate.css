@@ -4,6 +4,18 @@ main {
   padding: 0 16px;
 }
 
+body.sidebar-open main,
+body.sidebar-collapsed main {
+  max-width: none;
+}
+
+body.sidebar-open main > *,
+body.sidebar-collapsed main > * {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .page-header {
   margin-bottom: 24px;
 }
@@ -215,4 +227,5 @@ main {
   border-color: #999;
   color: #333;
 }
+
 
