@@ -127,6 +127,11 @@ section.container.pb-5 {
 /* Push content below fixed navbar */
 
 body {
+  padding-top: 0;
+}
+
+body.sidebar-open,
+body.sidebar-collapsed {
   padding-top: var(--nav-h);
 }
 
