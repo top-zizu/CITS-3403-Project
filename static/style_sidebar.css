@@ -1,14 +1,14 @@
 .dh-sidebar {
   position: fixed;
-  top: 0;
+  top: var(--nav-h);
   left: 0;
   width: 260px;
-  height: 100vh;
-  padding-top: calc(var(--nav-h) + 16px);
+  height: calc(100vh - var(--nav-h));
+  padding: 16px 14px;
   background: var(--surface);
   border-right: 1px solid var(--border);
-  padding: 16px 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 900;
   transition: width 0.2s ease;
 }
