@@ -216,18 +216,3 @@ main {
   color: #333;
 }
 
-body.sidebar-open main {
-  width: auto;
-  max-width: 680px;
-  margin: 40px auto 80px !important;
-  transform: translateX(90px);
-  transition: transform 0.2s ease;
-}
-
-body.sidebar-collapsed main {
-  width: auto;
-  max-width: 680px;
-  margin: 40px auto 80px !important;
-  transform: translateX(0);
-  transition: transform 0.2s ease;
-}
