@@ -220,6 +220,23 @@ def test_vote_on_closed_debate_rejected(logged_in_client, app, sample_user):
 
 # ── API tests ─────────────────────────────────────────────────────
 
+def test_bookmark_adds_debate_to_saved_page(logged_in_client, sample_debate, app):
+    """A bookmarked debate appears on the saved debates page."""
+    response = logged_in_client.post(f"/debates/{sample_debate.id}/bookmark")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["bookmarked"] is True
+
+    with app.app_context():
+        bookmark = Bookmark.query.filter_by(debate_id=sample_debate.id).first()
+        assert bookmark is not None
+
+    saved_response = logged_in_client.get("/saved-debates")
+    assert saved_response.status_code == 200
+    assert b"Test Debate" in saved_response.data
+    assert b"```html" not in saved_response.data
+
+
 def test_api_debates_returns_json(client, sample_debate):
     """The debates API returns valid JSON with a debates list."""
     response = client.get("/api/debates")
@@ -235,6 +252,40 @@ def test_api_debates_contains_sample(client, sample_debate):
     data = response.get_json()
     titles = [d["title"] for d in data["debates"]]
     assert "Test Debate" in titles
+
+
+def test_api_trending_tags_counts_open_public_debates(client, app, sample_user):
+    """Trending tags are ranked by open public debate count."""
+    def add_debate(title, category, expires_delta, is_private=False, is_closed=False):
+        debate = Debate(
+            title=title,
+            description=title,
+            category=category,
+            expires_at=datetime.now(timezone.utc) + expires_delta,
+            user_id=sample_user.id,
+            is_private=is_private,
+            is_closed=is_closed,
+        )
+        db.session.add(debate)
+
+    with app.app_context():
+        for index in range(3):
+            add_debate(f"Politics {index}", "politics", timedelta(days=1))
+        for index in range(2):
+            add_debate(f"Technology {index}", "technology", timedelta(days=1))
+        add_debate("Food", "food", timedelta(days=1))
+        add_debate("Work", "work", timedelta(days=1))
+        add_debate("Ended education", "education", timedelta(days=-1))
+        add_debate("Closed education", "education", timedelta(days=1), is_closed=True)
+        add_debate("Private lifestyle", "lifestyle", timedelta(days=1), is_private=True)
+        db.session.commit()
+
+    response = client.get("/api/trending-tags")
+    assert response.status_code == 200
+    tags = response.get_json()["tags"]
+    assert [tag["tag"] for tag in tags] == ["politics", "technology", "food", "work"]
+    assert tags[0]["count"] == 3
+    assert tags[0]["url"] == "/search?tag=politics"
 
 
 def test_api_me_requires_login(client):

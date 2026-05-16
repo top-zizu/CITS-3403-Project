@@ -174,4 +174,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 86px;
+}
+
+.votes button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.votes button > strong {
+  display: block;
+  font-size: 1.18rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.votes button > div {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.68);
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1;
 }

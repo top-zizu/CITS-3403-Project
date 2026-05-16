@@ -21,6 +21,20 @@ csrf = CSRFProtect(app)
 
 ALLOWED_AVATAR_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+TAG_ICON_TYPES = {
+    "politics": "landmark",
+    "technology": "monitor",
+    "lifestyle": "leaf",
+    "food": "pizza",
+    "work": "briefcase",
+    "animals": "paw",
+    "sports": "trophy",
+    "entertainment": "film",
+    "environment": "leaf",
+    "education": "book",
+    "general": "tag",
+}
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -106,6 +120,10 @@ def _save_avatar(file_storage):
     os.makedirs(upload_dir, exist_ok=True)
     file_storage.save(os.path.join(upload_dir, filename))
     return url_for("static", filename=f"uploads/avatars/{filename}")
+
+
+def _tag_icon_type(category):
+    return TAG_ICON_TYPES.get((category or "").strip().lower(), "tag")
 
 
 def _debate_to_dict(debate):
@@ -217,6 +235,40 @@ def api_debate_comments(debate_id):
         "comments": [comment_to_dict(c) for c in top_level],
         "sort": sort,
     })
+
+
+@app.route("/api/trending-tags")
+def api_trending_tags():
+    now = datetime.utcnow()
+    count_expr = db.func.count(Debate.id)
+
+    rows = (
+        db.session.query(Debate.category, count_expr.label("open_count"))
+        .filter(
+            Debate.category.isnot(None),
+            Debate.category != "",
+            Debate.is_private == False,
+            Debate.is_closed == False,
+            Debate.expires_at > now,
+        )
+        .group_by(Debate.category)
+        .order_by(count_expr.desc(), Debate.category.asc())
+        .limit(4)
+        .all()
+    )
+
+    return jsonify({
+        "tags": [
+            {
+                "tag": category,
+                "count": open_count,
+                "icon": _tag_icon_type(category),
+                "url": url_for("search", tag=category),
+            }
+            for category, open_count in rows
+        ],
+    })
+
 
 @app.route("/api/debates")
 def api_debates():
@@ -913,7 +965,12 @@ def saved_debates():
         .order_by(Bookmark.created_at.desc())
         .all()
     )
-    return render_template("saved_debates.html", debates=[b.debate for b in bookmarks])
+    debates = [
+        _debate_to_dict(bookmark.debate)
+        for bookmark in bookmarks
+        if bookmark.debate and _can_list_debate(bookmark.debate)
+    ]
+    return render_template("saved_debates.html", debates=debates)
 
 
 @app.route("/my-debates")

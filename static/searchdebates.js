@@ -3,8 +3,10 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
 
 let debates = [];
 let categories = [];
-const activeFilters = new Set();
-let searchQuery = new URLSearchParams(window.location.search).get('q') || '';
+const initialParams = new URLSearchParams(window.location.search);
+const initialTag = initialParams.get('tag') || initialParams.get('category') || '';
+const activeFilters = new Set(initialTag ? [initialTag] : []);
+let searchQuery = initialParams.get('q') || '';
 let searchTimer = null;
 
 const filterTags = document.getElementById('filter-tags');
@@ -72,6 +74,7 @@ function renderFilterTags() {
         activeFilters.add(tag);
       }
 
+      updateFilterUrl();
       renderFilterTags();
       renderDebates();
 
@@ -79,6 +82,28 @@ function renderFilterTags() {
 
     filterTags.appendChild(button);
   });
+}
+
+function updateFilterUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const selectedTags = [...activeFilters];
+
+  params.delete('category');
+
+  if (selectedTags.length === 1) {
+    params.set('tag', selectedTags[0]);
+  } else {
+    params.delete('tag');
+  }
+
+  if (searchQuery) {
+    params.set('q', searchQuery);
+  } else {
+    params.delete('q');
+  }
+
+  const queryString = params.toString();
+  window.history.replaceState(null, '', queryString ? `/search?${queryString}` : '/search');
 }
 
 function getFilteredDebates() {
@@ -476,6 +501,7 @@ document.addEventListener('click', event => {
 searchInput?.addEventListener('input', event => {
 
   searchQuery = event.target.value.trim();
+  updateFilterUrl();
 
   clearTimeout(searchTimer);
 
