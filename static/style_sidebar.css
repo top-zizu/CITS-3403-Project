@@ -112,6 +112,12 @@
   height: 20px;
 }
 
+.dh-sidebar .sidebar-link .trending-arrow-icon {
+  color: #f97316;
+  width: 16px;
+  height: 16px;
+}
+
 /* Collapsed Sidebar */
 
 .dh-sidebar.collapsed {
