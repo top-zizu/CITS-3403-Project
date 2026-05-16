@@ -214,6 +214,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return icons[iconType] || icons.tag;
   }
 
+  function risingArrowSvg() {
+    return `<svg class="trending-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+        <polyline points="16 7 22 7 22 13"/>
+      </svg>`;
+  }
+
   function isActiveTrendingTag(tag) {
     const params = new URLSearchParams(window.location.search);
     return window.location.pathname === "/search" && params.get("tag") === tag;
@@ -245,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
           class="sidebar-link ${isActiveTrendingTag(tag.tag) ? "active" : ""}"
           title="${escapeHTML(`${tag.count} open debate${tag.count === 1 ? "" : "s"}`)}">
           ${iconSvg(tag.icon)}
+          ${risingArrowSvg()}
           <span>${escapeHTML(formatTagLabel(tag.tag))}</span>
         </a>
       `).join("");
