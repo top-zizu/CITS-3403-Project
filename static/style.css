@@ -108,15 +108,26 @@ section.container.pb-5 {
 /* NAVBAR*/
 
 #main-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 1000;
+
   height: var(--nav-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+
   display: flex;
   align-items: center;
+
   padding: 0 28px;
+}
+
+/* Push content below fixed navbar */
+
+body {
+  padding-top: var(--nav-h);
 }
 
 .nav-brand {
