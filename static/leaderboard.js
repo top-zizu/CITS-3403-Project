@@ -1,94 +1,131 @@
-const USERS = [
-    { id: 'argumentking',    name: 'ArgumentKing',    meta: '203 votes · 145 comments', points: 1523, debates: 67, badge: 'Contrarian',  conformity: 28,  color: '#f59e0b' },
-    { id: 'consensusbuilder',name: 'ConsensusBuilder',meta: '187 votes · 98 comments',  points: 1345, debates: 51, badge: 'Conformist',  conformity: 89,  color: '#6366f1' },
-    { id: 'debatemaster',    name: 'DebateMaster',    meta: '156 votes · 87 comments',  points: 1247, debates: 42, badge: 'Conformist',  conformity: 67,  color: '#2563eb', you: true },
-    { id: 'voiceofreason',   name: 'VoiceOfReason',   meta: '167 votes · 79 comments',  points: 1156, debates: 44, badge: 'Conformist',  conformity: 73,  color: '#10b981' },
-    { id: 'logicqueen',      name: 'LogicQueen',      meta: '142 votes · 65 comments',  points: 1089, debates: 38, badge: 'Moderate',    conformity: 52,  color: '#ec4899' },
-    { id: 'contrarymary',    name: 'ContraryMary',    meta: '128 votes · 72 comments',  points: 987,  debates: 35, badge: 'Contrarian',  conformity: 15,  color: '#ef4444' },
-    { id: 'mindchanger',     name: 'MindChanger',     meta: '115 votes · 54 comments',  points: 876,  debates: 29, badge: 'Moderate',    conformity: 45,  color: '#8b5cf6' },
-    { id: 'perspectiveseeker',name:'PerspectiveSeeker',meta: '98 votes · 43 comments',  points: 765,  debates: 26, badge: 'Moderate',    conformity: 51,  color: '#14b8a6' },
-  ];
+let currentSort = 'points';
+let currentUsers = [];
 
-  let currentSort = 'points';
+const RANK_ICONS = { 1: '&#129351;', 2: '&#129352;', 3: '&#129353;' };
 
-  const RANK_ICONS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
-  function badgeClass(badge) {
-    if (badge === 'Conformist')  return 'badge-conformist';
-    if (badge === 'Contrarian')  return 'badge-contrarian';
-    return 'badge-moderate';
+function badgeClass(badge) {
+  if (badge === 'Conformist') return 'badge-conformist';
+  if (badge === 'Contrarian') return 'badge-contrarian';
+  return 'badge-moderate';
+}
+
+function badgeIcon(badge) {
+  if (badge === 'Conformist') return '&#8599;';
+  if (badge === 'Contrarian') return '&#8601;';
+  return '&mdash;';
+}
+
+function showLeaderboardMessage(message) {
+  const body = document.getElementById('leaderboard-body');
+  if (!body) return;
+
+  body.innerHTML = `
+    <div class="leaderboard-row">
+      <div class="rank-cell"></div>
+      <div class="user-cell">${escapeHTML(message)}</div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  `;
+}
+
+function renderLeaderboard(users) {
+  const body = document.getElementById('leaderboard-body');
+  if (!body) return;
+
+  if (!users.length) {
+    showLeaderboardMessage('No users to rank yet.');
+    return;
   }
 
-  function badgeIcon(badge) {
-    if (badge === 'Conformist')  return '↗';
-    if (badge === 'Contrarian')  return '↙';
-    return '—';
-  }
+  body.innerHTML = '';
 
-  function getSorted(sort) {
-    const copy = [...USERS];
-    if (sort === 'points') {
-      return copy.sort((a, b) => b.points - a.points);
-    } else {
-      // Most distinctive = lowest conformity (most contrarian)
-      return copy.sort((a, b) => a.conformity - b.conformity);
-    }
-  }
+  users.forEach((user, i) => {
+    const rank = i + 1;
+    const row = document.createElement('a');
+    row.href = user.profile_url || `/profile/${encodeURIComponent(user.username)}`;
+    row.className = `leaderboard-row${user.you ? ' you' : ''}`;
+    row.style.animationDelay = `${i * 40}ms`;
 
-  function renderLeaderboard(sort) {
-    const sorted = getSorted(sort);
-    const body = document.getElementById('leaderboard-body');
-    body.innerHTML = '';
-
-    sorted.forEach((user, i) => {
-      const rank = i + 1;
-      const row = document.createElement('a');
-      row.href = `user-profile.html?user=${user.id}`;
-      row.className = 'leaderboard-row' + (user.you ? ' you' : '');
-      row.style.animationDelay = `${i * 40}ms`;
-
-      row.innerHTML = `
-        <div class="rank-cell">
-          <span class="rank-icon">${RANK_ICONS[rank] || ''}</span>
-          <span class="rank-num">#${rank}</span>
-        </div>
-        <div class="user-cell">
-          <div class="avatar" style="background:${user.color}">${user.name[0]}</div>
-          <div class="user-info">
-            <div class="username">
-              ${user.name}
-              ${user.you ? '<span class="you-badge">You</span>' : ''}
-            </div>
-            <div class="user-meta">${user.meta}</div>
+    row.innerHTML = `
+      <div class="rank-cell">
+        <span class="rank-icon">${RANK_ICONS[rank] || ''}</span>
+        <span class="rank-num">#${rank}</span>
+      </div>
+      <div class="user-cell">
+        <div class="avatar" style="background:${escapeHTML(user.color)}">${escapeHTML((user.name || user.username || '?').slice(0, 1).toUpperCase())}</div>
+        <div class="user-info">
+          <div class="username">
+            ${escapeHTML(user.name || user.username)}
+            ${user.you ? '<span class="you-badge">You</span>' : ''}
           </div>
+          <div class="user-meta">${escapeHTML(user.meta)}</div>
         </div>
-        <div class="points-cell">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          ${user.points.toLocaleString()}
+      </div>
+      <div class="points-cell">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        ${Number(user.points || 0).toLocaleString()}
+      </div>
+      <div class="debates-cell">${Number(user.debates || 0).toLocaleString()}</div>
+      <div>
+        <span class="badge-pill ${badgeClass(user.badge)}">
+          ${badgeIcon(user.badge)} ${escapeHTML(user.badge)}
+        </span>
+      </div>
+      <div class="conformity-cell">
+        <span class="conformity-pct">${Number(user.conformity || 0).toLocaleString()}%</span>
+        <div class="conf-bar-track">
+          <div class="conf-bar-fill" style="width:${Math.max(0, Math.min(100, Number(user.conformity || 0)))}%"></div>
         </div>
-        <div class="debates-cell">${user.debates}</div>
-        <div>
-          <span class="badge-pill ${badgeClass(user.badge)}">
-            ${badgeIcon(user.badge)} ${user.badge}
-          </span>
-        </div>
-        <div class="conformity-cell">
-          <span class="conformity-pct">${user.conformity}%</span>
-          <div class="conf-bar-track">
-            <div class="conf-bar-fill" style="width:${user.conformity}%"></div>
-          </div>
-        </div>
-      `;
+      </div>
+    `;
 
-      body.appendChild(row);
-    });
+    body.appendChild(row);
+  });
+}
+
+async function loadLeaderboard(sort = currentSort) {
+  currentSort = sort;
+  showLeaderboardMessage('Loading leaderboard...');
+
+  const params = new URLSearchParams({ sort });
+  const response = await fetch(`/api/leaderboard?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error('Could not load leaderboard');
   }
 
-  function setSort(sort, btn) {
-    currentSort = sort;
-    document.querySelectorAll('.sort-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    renderLeaderboard(sort);
-  }
+  const data = await response.json();
+  currentUsers = data.users || [];
+  renderLeaderboard(currentUsers);
+}
 
-  renderLeaderboard('points');
+function setSort(sort, btn) {
+  currentSort = sort;
+  document.querySelectorAll('.sort-tab').forEach(tab => {
+    tab.classList.toggle('active', tab === btn);
+  });
+
+  loadLeaderboard(sort).catch(() => {
+    showLeaderboardMessage('Unable to load leaderboard data. Please try again.');
+  });
+}
+
+window.setSort = setSort;
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadLeaderboard('points').catch(() => {
+    showLeaderboardMessage('Unable to load leaderboard data. Please try again.');
+  });
+});
