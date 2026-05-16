@@ -368,3 +368,13 @@ body.sidebar-collapsed {
     right: 12px;
   }
 }
+
+.nav-login {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-page {
+  padding-top: 64px;
+}
