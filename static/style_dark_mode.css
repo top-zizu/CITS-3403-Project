@@ -478,5 +478,318 @@ body.dark-mode .card {
     color: #d1d5db;
   }
 
+/*-------------Debate Detail---------------*/
+body.dark-mode .back-btn {
+  color: #9ca3af;
+  background: #111827;
+  border-color: #1f2937;
+}
+
+body.dark-mode .back-btn:hover {
+  background: #1f2937;
+  color: #60a5fa;
+}
+
+body.dark-mode .debate-card {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+body.dark-mode .debate-title {
+  color: #f9fafb;
+}
+
+body.dark-mode .debate-description {
+  color: #9ca3af;
+}
+
+body.dark-mode .debate-creator {
+  color: #9ca3af;
+}
+
+body.dark-mode .creator-link {
+  color: #60a5fa;
+}
+
+body.dark-mode .debate-meta-row {
+  border-bottom-color: #1f2937;
+}
+
+body.dark-mode .tag {
+  background: #1f2937;
+  border-color: #374151;
+  color: #d1d5db;
+}
+
+body.dark-mode .status-badge.status-active {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+body.dark-mode .status-badge.status-ended {
+  background: #1f2937;
+  color: #9ca3af;
+  border-color: #374151;
+}
+
+body.dark-mode .winner-badge {
+  background: rgba(234, 179, 8, 0.12);
+  color: #facc15;
+  border-color: rgba(234, 179, 8, 0.2);
+}
+
+body.dark-mode .icon-btn {
+  color: #9ca3af;
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark-mode .icon-btn:hover {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .vote-panels {
+  gap: inherit;
+}
+
+body.dark-mode .vote-panel {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .vote-panel.agree:hover,
+body.dark-mode .vote-panel.agree.voted {
+  background: rgba(37, 99, 235, 0.18);
+  border-color: #2563eb;
+}
+
+body.dark-mode .vote-panel.disagree:hover,
+body.dark-mode .vote-panel.disagree.voted {
+  background: rgba(220, 38, 38, 0.18);
+  border-color: #dc2626;
+}
+
+body.dark-mode .vote-count,
+body.dark-mode .vote-pct {
+  color: #d1d5db;
+}
+
+body.dark-mode .progress-track {
+  background: #1f2937;
+}
+
+body.dark-mode .comments-card {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+body.dark-mode .comments-title {
+  color: #e5e7eb;
+  border-bottom-color: #1f2937;
+}
+
+body.dark-mode .stance-tabs {
+  border-bottom-color: #1f2937;
+}
+
+body.dark-mode .stance-tab {
+  color: #9ca3af;
+  border-color: transparent;
+}
+
+body.dark-mode .stance-tab.blue.active {
+  color: #60a5fa;
+  border-bottom-color: #2563eb;
+}
+
+body.dark-mode .stance-tab.red.active {
+  color: #f87171;
+  border-bottom-color: #dc2626;
+}
+
+body.dark-mode .stance-tab.neutral.active {
+  color: #d1d5db;
+  border-bottom-color: #6b7280;
+}
+
+body.dark-mode .stance-tab:hover {
+  color: #e5e7eb;
+}
+
+body.dark-mode .comment-input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .comment-input::placeholder {
+  color: #6b7280;
+}
+
+body.dark-mode .comment-input:focus {
+  border-color: var(--accent);
+}
+
+body.dark-mode .post-btn {
+  background: var(--accent);
+  color: #fff;
+}
+
+body.dark-mode .post-btn:hover {
+  filter: brightness(1.1);
+}
+
+body.dark-mode .comment {
+  border-bottom-color: #1f2937;
+}
+
+body.dark-mode .comment:hover {
+  background: #1a2234;
+}
+
+body.dark-mode .comment-author {
+  color: #60a5fa;
+}
+
+body.dark-mode .comment-time {
+  color: #6b7280;
+}
+
+body.dark-mode .comment-body {
+  color: #d1d5db;
+}
+
+body.dark-mode .stance-pill.blue {
+  background: rgba(37, 99, 235, 0.18);
+  color: #60a5fa;
+}
+
+body.dark-mode .stance-pill.red {
+  background: rgba(220, 38, 38, 0.18);
+  color: #f87171;
+}
+
+body.dark-mode .stance-pill.neutral {
+  background: #1f2937;
+  color: #9ca3af;
+}
+
+body.dark-mode .like-btn {
+  color: #6b7280;
+}
+
+body.dark-mode .like-btn:hover,
+body.dark-mode .like-btn.liked {
+  color: var(--accent);
+}
+
+body.dark-mode .reply-btn {
+  color: #6b7280;
+}
+
+body.dark-mode .reply-btn:hover {
+  color: #60a5fa;
+}
+
+body.dark-mode .replies {
+  border-left-color: #374151;
+}
+
+body.dark-mode .reply-input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .reply-input::placeholder {
+  color: #6b7280;
+}
+
+body.dark-mode .reply-post-btn {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .reply-post-btn:hover {
+  background: #374151;
+}
+
+/*-------------My Debates---------------*/
+body.dark-mode .delete-btn {
+  color: #6b7280;
+}
+
+body.dark-mode .delete-btn:hover {
+  color: #f87171;
+  background: rgba(224, 82, 82, 0.12);
+}
+
+body.dark-mode .delete-confirm-label {
+  color: #f87171;
+}
+
+body.dark-mode .delete-confirm-no {
+  border-color: #374151;
+  color: #9ca3af;
+  background: #1f2937;
+}
+
+body.dark-mode .delete-confirm-no:hover {
+  background: #374151;
+}
+
+/*-------------Saved Debates---------------*/
+body.dark-mode .save-btn {
+  color: var(--accent);
+}
+
+body.dark-mode .save-btn:hover {
+  color: #60a5fa;
+}
+
+/*-------------Search / Filter Bar (shared)---------------*/
+body.dark-mode .search-wrap {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+body.dark-mode .search-wrap svg {
+  color: #6b7280;
+}
+
+body.dark-mode .search-input {
+  background: transparent;
+  color: #e5e7eb;
+}
+
+body.dark-mode .search-input::placeholder {
+  color: #6b7280;
+}
+
+body.dark-mode .filter-label {
+  color: #9ca3af;
+}
+
+body.dark-mode .filter-tag {
+  background: #1f2937;
+  border-color: #374151;
+  color: #9ca3af;
+}
+
+body.dark-mode .filter-tag:hover {
+  border-color: #2563eb;
+  color: #60a5fa;
+}
+
+body.dark-mode .filter-tag.active {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: #2563eb;
+  color: #60a5fa;
+}
+
   
 
