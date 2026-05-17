@@ -801,7 +801,7 @@ def _social_user_to_dict(user):
 @app.route("/api/activity/friends")
 @login_required
 def api_activity_friends():
-    following = current_user.following.all()
+    following = [u for u in current_user.following.all() if u.followers.filter_by(id=current_user.id).first() is not None]
     if not following:
         return jsonify({"activities": []})
 
@@ -885,9 +885,9 @@ def api_friends():
 
     users = users_query.limit(50).all()
     if tab == "discover" and not query_text:
-        mutuals = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
+        follows_you = [u for u in users if u.following.filter(User.id == current_user.id).first() is not None]
         others = [u for u in users if u.following.filter(User.id == current_user.id).first() is None]
-        users = mutuals + others
+        users = follows_you + others
     if tab == "following":
         users.sort(
             key=lambda user: (
