@@ -606,7 +606,9 @@ def api_leaderboard():
 
 def _profile_context(user):
     """Build the context dict shared by both profile routes."""
-    debates       = Debate.query.filter_by(user_id=user.id).order_by(Debate.created_at.desc()).all()
+    debates       = Debate.query.filter_by(user_id=user.id).filter(
+        Debate.is_private == False if not (current_user.is_authenticated and current_user.id == user.id) else True
+    ).order_by(Debate.created_at.desc()).all()
     vote_count    = Vote.query.filter_by(user_id=user.id).count()
     comment_count = Comment.query.filter_by(user_id=user.id).count()
     follower_count  = user.followers.count()
@@ -616,12 +618,22 @@ def _profile_context(user):
     if current_user.is_authenticated and current_user.id != user.id:
         is_following = current_user.following.filter(User.id == user.id).first() is not None
         follows_you = user.following.filter(User.id == current_user.id).first() is not None
-    recent_votes = (
-        Vote.query
-        .filter_by(user_id=user.id)
-        .order_by(Vote.created_at.desc())
-        .limit(5).all()
-    )
+    if current_user.is_authenticated and current_user.id == user.id:
+        recent_votes = (
+            Vote.query
+            .filter_by(user_id=user.id)
+            .order_by(Vote.created_at.desc())
+            .limit(5).all()
+        )
+    else:
+        recent_votes = (
+            Vote.query
+            .filter_by(user_id=user.id)
+            .join(Debate, Vote.debate_id == Debate.id)
+            .filter(Debate.is_private == False)
+            .order_by(Vote.created_at.desc())
+            .limit(5).all()
+        )
     return dict(
         user=user,
         debates=debates,
