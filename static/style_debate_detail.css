@@ -427,3 +427,17 @@
     transition: background .15s;
   }
   .reply-post-btn:hover { background: #1d4ed8; }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 4px;
+    border-radius: 5px;
+    color: var(--muted);
+    transition: color .15s, background .15s;
+  }
+  .delete-btn:hover { color: var(--red); background: var(--red-lt); }
+  .delete-btn svg { width: 14px; height: 14px; }
