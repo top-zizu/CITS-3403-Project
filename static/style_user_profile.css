@@ -212,3 +212,41 @@ body.sidebar-open main,
   font-size: .9rem;
   text-align: center;
 }
+
+.follow-profile-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  padding: 8px 18px;
+  border-radius: 9px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+
+  /* Default: not following */
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.follow-profile-btn:hover {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* When already following */
+.follow-profile-btn.following {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.follow-profile-btn.following:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #dc2626;
+}
