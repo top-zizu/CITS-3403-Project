@@ -189,7 +189,7 @@
     {
       id: {{ c.id }},
       author: {{ c.author.username | tojson }},
-      isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == c.author_id else 'false' }},
+      isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == c.user_id else 'false' }},
       stance: {{ (c.stance or 'neutral') | tojson }},
       time: {{ c.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
       text: {{ c.content | tojson }},
@@ -200,7 +200,7 @@
         {
           id: {{ r.id }},
           author: {{ r.author.username | tojson }},
-          isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == r.author_id else 'false' }},
+          isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == r.user_id else 'false' }},
           stance: {{ (r.stance or 'neutral') | tojson }},
           time: {{ r.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
           text: {{ r.content | tojson }},
