@@ -191,7 +191,7 @@
       author: {{ c.author.username | tojson }},
       isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == c.user_id else 'false' }},
       stance: {{ (c.stance or 'neutral') | tojson }},
-      time: {{ c.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
+      time: {{ c.created_at.strftime('%Y-%m-%dT%H:%M:%SZ') | tojson }},
       text: {{ c.content | tojson }},
       likes: {{ c.likes | length }},
       liked: false,
@@ -202,7 +202,7 @@
           author: {{ r.author.username | tojson }},
           isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == r.user_id else 'false' }},
           stance: {{ (r.stance or 'neutral') | tojson }},
-          time: {{ r.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
+          time: {{ r.created_at.strftime('%Y-%m-%dT%H:%M:%SZ') | tojson }},
           text: {{ r.content | tojson }},
           likes: {{ r.likes | length }},
           liked: false,
@@ -431,6 +431,13 @@
     };
   }
 
+  function formatTime(isoString) {
+    return new Date(isoString).toLocaleString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: false
+    });
+  }
+
   function stanceLabel(s) {
     return s === 'blue' ? 'Agree' : s === 'red' ? 'Disagree' : 'Neutral';
   }
@@ -473,7 +480,7 @@
           <a href="/user/${c.author}" class="comment-author">${c.author}</a>
           <span class="stance-pill ${c.stance}">${stanceLabel(c.stance)}</span>
           <span class="comment-time">
-            ${c.time}
+            ${formatTime(c.time)}
             <button class="like-btn ${c.liked ? 'liked' : ''}"
                     onclick="toggleLike(${c.id}, ${isReply}, ${parentId})">
               <svg viewBox="0 0 24 24"

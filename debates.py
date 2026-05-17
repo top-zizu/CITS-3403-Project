@@ -292,7 +292,7 @@ def post_comment(debate_id):
         'comment_id': comment.id,
         'username':   current_user.username,
         'content':    comment.content,
-        'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
+        'created_at': comment.created_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'stance':     comment.stance,
     })
 
@@ -337,7 +337,7 @@ def post_reply(comment_id):
         'comment_id': reply.id,
         'username':   current_user.username,
         'content':    reply.content,
-        'created_at': reply.created_at.strftime('%d %b %Y, %H:%M'),
+        'created_at': reply.created_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'stance':     reply.stance,
     })
 
