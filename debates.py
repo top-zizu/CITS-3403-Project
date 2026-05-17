@@ -245,6 +245,12 @@ def cast_vote(debate_id):
 # COMMENTS
 # ============================================================
 
+def _comment_stance_for_user(user_id, debate_id):
+    user_vote = Vote.query.filter_by(user_id=user_id, debate_id=debate_id).first()
+    stance_map = {'agree': 'blue', 'disagree': 'red'}
+    return stance_map.get(user_vote.vote_type, 'neutral') if user_vote else 'neutral'
+
+
 @debates_bp.route('/debates/<int:debate_id>/comments', methods=['POST'])
 @login_required
 def post_comment(debate_id):
@@ -255,10 +261,12 @@ def post_comment(debate_id):
     if not content:
         return jsonify({'error': 'Comment cannot be empty.'}), 400
 
+    stance = _comment_stance_for_user(current_user.id, debate_id)
     comment = Comment(
         user_id=current_user.id,
         debate_id=debate_id,
         content=content,
+        stance=stance,
         parent_comment_id=None,
     )
 
@@ -279,17 +287,13 @@ def post_comment(debate_id):
 
     db.session.commit()
 
-    user_vote = Vote.query.filter_by(user_id=current_user.id, debate_id=debate_id).first()
-    stance_map = {'agree': 'blue', 'disagree': 'red'}
-    stance = stance_map.get(user_vote.vote_type, 'neutral') if user_vote else 'neutral'
-
     return jsonify({
         'success':    True,
         'comment_id': comment.id,
         'username':   current_user.username,
         'content':    comment.content,
         'created_at': comment.created_at.strftime('%d %b %Y, %H:%M'),
-        'stance':     stance,
+        'stance':     comment.stance,
     })
 
 
@@ -303,10 +307,12 @@ def post_reply(comment_id):
     if not content:
         return jsonify({'error': 'Reply cannot be empty.'}), 400
 
+    stance = _comment_stance_for_user(current_user.id, parent.debate_id)
     reply = Comment(
         user_id=current_user.id,
         debate_id=parent.debate_id,
         content=content,
+        stance=stance,
         parent_comment_id=parent.id,
     )
 
@@ -326,17 +332,13 @@ def post_reply(comment_id):
 
     db.session.commit()
 
-    user_vote = Vote.query.filter_by(user_id=current_user.id, debate_id=parent.debate_id).first()
-    stance_map = {'agree': 'blue', 'disagree': 'red'}
-    stance = stance_map.get(user_vote.vote_type, 'neutral') if user_vote else 'neutral'
-
     return jsonify({
         'success':    True,
         'comment_id': reply.id,
         'username':   current_user.username,
         'content':    reply.content,
         'created_at': reply.created_at.strftime('%d %b %Y, %H:%M'),
-        'stance':     stance,
+        'stance':     reply.stance,
     })
 
 

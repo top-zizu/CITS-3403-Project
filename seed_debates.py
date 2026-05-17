@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import text
+
 from app import app
 from models import db, Debate, User, Comment, Vote, CommentLike
+
+CURRENT_ALEMBIC_HEAD = "8b8a7c4d2f1e"
 
 
 DEMO_USER = {
@@ -16,6 +20,7 @@ DEMO_DEBATES = [
         "title": "Universal basic income should be implemented globally",
         "description": "Should every adult receive a guaranteed income from the government regardless of employment status?",
         "category": "politics",
+        "author": "argumentking",
         "duration_hours": 12,
         "agree_votes": 723,
         "disagree_votes": 556,
@@ -24,6 +29,7 @@ DEMO_DEBATES = [
         "title": "Artificial Intelligence will create more jobs than it destroys",
         "description": "Will AI ultimately expand employment opportunities, or will automation permanently remove more jobs than it creates?",
         "category": "technology",
+        "author": "logicqueen",
         "duration_hours": 18,
         "agree_votes": 445,
         "disagree_votes": 678,
@@ -32,6 +38,7 @@ DEMO_DEBATES = [
         "title": "Climate change is the most pressing issue of our time",
         "description": "Should climate change be treated as the highest priority global challenge?",
         "category": "environment",
+        "author": "voiceofreason",
         "duration_days": 1,
         "agree_votes": 892,
         "disagree_votes": 234,
@@ -40,6 +47,7 @@ DEMO_DEBATES = [
         "title": "Social media does more harm than good for society",
         "description": "Do the social costs of social media outweigh its benefits for communication and community?",
         "category": "lifestyle",
+        "author": "mindchanger",
         "duration_days": 2,
         "agree_votes": 612,
         "disagree_votes": 389,
@@ -48,6 +56,7 @@ DEMO_DEBATES = [
         "title": "Remote work is better than working in an office",
         "description": "Does remote work produce better outcomes for workers and organisations than office-based work?",
         "category": "work",
+        "author": "demo_debater",
         "duration_days": 3,
         "agree_votes": 801,
         "disagree_votes": 420,
@@ -56,6 +65,7 @@ DEMO_DEBATES = [
         "title": "Pineapple belongs on pizza",
         "description": "Is pineapple a valid and delicious pizza topping, or a culinary mistake?",
         "category": "food",
+        "author": "contrarymary",
         "duration_hours": 6,
         "agree_votes": 334,
         "disagree_votes": 891,
@@ -64,6 +74,7 @@ DEMO_DEBATES = [
         "title": "Schools should ban smartphones during class",
         "description": "Would phone-free classrooms improve learning and attention, or would bans create more problems than they solve?",
         "category": "education",
+        "author": "consensusbuilder",
         "expired_days_ago": 2,
         "agree_votes": 742,
         "disagree_votes": 418,
@@ -74,6 +85,7 @@ DEMO_DEBATES = [
         "title": "Nuclear energy should be central to climate policy",
         "description": "Should governments prioritise nuclear power as a major clean energy source?",
         "category": "environment",
+        "author": "perspectiveseeker",
         "expired_days_ago": 5,
         "agree_votes": 528,
         "disagree_votes": 611,
@@ -83,7 +95,55 @@ DEMO_DEBATES = [
 ]
 
 
+def ensure_schema_compatibility():
+    comment_columns = {
+        column["name"]
+        for column in db.session.execute(text("PRAGMA table_info(comment)")).mappings()
+    }
+
+    if "stance" not in comment_columns:
+        db.session.execute(
+            text("ALTER TABLE comment ADD COLUMN stance VARCHAR(20) NOT NULL DEFAULT 'neutral'")
+        )
+
+    db.session.execute(text("""
+        UPDATE comment
+        SET stance = CASE (
+            SELECT vote.vote_type
+            FROM vote
+            WHERE vote.user_id = comment.user_id
+              AND vote.debate_id = comment.debate_id
+            LIMIT 1
+        )
+            WHEN 'agree' THEN 'blue'
+            WHEN 'disagree' THEN 'red'
+            ELSE COALESCE(stance, 'neutral')
+        END
+    """))
+
+    db.session.execute(text("""
+        CREATE TABLE IF NOT EXISTS alembic_version (
+            version_num VARCHAR(32) NOT NULL,
+            CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+        )
+    """))
+    existing_revision = db.session.execute(text("SELECT version_num FROM alembic_version")).scalar()
+    if existing_revision != CURRENT_ALEMBIC_HEAD:
+        db.session.execute(text("DELETE FROM alembic_version"))
+        db.session.execute(
+            text("INSERT INTO alembic_version (version_num) VALUES (:revision)"),
+            {"revision": CURRENT_ALEMBIC_HEAD},
+        )
+
+    db.session.commit()
+
+
 DEMO_SOCIAL_USERS = [
+    {
+        "username": "consensusbuilder",
+        "email": "consensusbuilder@example.com",
+        "bio": "Usually spots where the room is heading before the poll closes.",
+    },
     {
         "username": "logicqueen",
         "email": "logicqueen@example.com",
@@ -109,13 +169,20 @@ DEMO_SOCIAL_USERS = [
         "email": "mindchanger@example.com",
         "bio": "Open to being convinced.",
     },
+    {
+        "username": "perspectiveseeker",
+        "email": "perspectiveseeker@example.com",
+        "bio": "Collects thoughtful edge cases and better questions.",
+    },
 ]
 
 
 DEMO_FOLLOWING = [
+    "consensusbuilder",
     "logicqueen",
     "argumentking",
     "voiceofreason",
+    "perspectiveseeker",
 ]
 
 
@@ -123,7 +190,204 @@ DEMO_FOLLOWERS = [
     "voiceofreason",
     "contrarymary",
     "mindchanger",
+    "consensusbuilder",
 ]
+
+
+DEMO_LEADERBOARD_TARGETS = {
+    "argumentking": {"points": 1523, "conformity": 28, "won": 8, "lost": 20},
+    "consensusbuilder": {"points": 1345, "conformity": 89, "won": 23, "lost": 3},
+    "demo_debater": {"points": 1247, "conformity": 67, "won": 16, "lost": 8},
+    "voiceofreason": {"points": 1156, "conformity": 73, "won": 18, "lost": 7},
+    "logicqueen": {"points": 1089, "conformity": 64, "won": 15, "lost": 9},
+    "contrarymary": {"points": 987, "conformity": 15, "won": 4, "lost": 22},
+    "mindchanger": {"points": 876, "conformity": 45, "won": 11, "lost": 13},
+    "perspectiveseeker": {"points": 765, "conformity": 51, "won": 12, "lost": 12},
+}
+
+
+DEMO_ACTIVITY_DEBATES = [
+    {
+        "title": "Universities should make attendance optional",
+        "description": "Should students be trusted to manage attendance if assessments prove mastery?",
+        "category": "education",
+        "author": "logicqueen",
+        "duration_hours": 36,
+        "agree": ["argumentking", "contrarymary", "mindchanger", "perspectiveseeker"],
+        "disagree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason"],
+        "comments": ["logicqueen", "argumentking", "voiceofreason", "mindchanger"],
+    },
+    {
+        "title": "Public transport should be free in major cities",
+        "description": "Would free public transport reduce congestion enough to justify the cost?",
+        "category": "politics",
+        "author": "consensusbuilder",
+        "duration_hours": 28,
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason", "perspectiveseeker"],
+        "disagree": ["argumentking", "contrarymary", "mindchanger"],
+        "comments": ["consensusbuilder", "contrarymary", "perspectiveseeker", "demo_debater"],
+    },
+    {
+        "title": "Four-day work weeks should become standard",
+        "description": "Can shorter weeks improve productivity and wellbeing without hurting output?",
+        "category": "work",
+        "author": "voiceofreason",
+        "duration_hours": 44,
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "mindchanger", "voiceofreason"],
+        "disagree": ["argumentking", "contrarymary", "perspectiveseeker"],
+        "comments": ["voiceofreason", "argumentking", "logicqueen", "mindchanger"],
+    },
+    {
+        "title": "Streaming services are worse than cable became",
+        "description": "Have too many subscriptions recreated the problems streaming originally solved?",
+        "category": "entertainment",
+        "author": "mindchanger",
+        "duration_hours": 20,
+        "agree": ["argumentking", "contrarymary", "demo_debater", "mindchanger", "perspectiveseeker"],
+        "disagree": ["consensusbuilder", "logicqueen", "voiceofreason"],
+        "comments": ["mindchanger", "perspectiveseeker", "consensusbuilder", "contrarymary"],
+    },
+    {
+        "title": "Cities should prioritise bike lanes over parking",
+        "description": "Should scarce street space move people rather than store private cars?",
+        "category": "lifestyle",
+        "author": "perspectiveseeker",
+        "duration_hours": 52,
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason", "perspectiveseeker"],
+        "disagree": ["argumentking", "contrarymary", "mindchanger"],
+        "comments": ["perspectiveseeker", "voiceofreason", "argumentking", "logicqueen"],
+    },
+    {
+        "title": "Esports should be treated like traditional sports",
+        "description": "Do skill, training, spectatorship, and competition make esports sports?",
+        "category": "sports",
+        "author": "argumentking",
+        "duration_hours": 18,
+        "agree": ["argumentking", "demo_debater", "mindchanger", "perspectiveseeker"],
+        "disagree": ["consensusbuilder", "contrarymary", "logicqueen", "voiceofreason"],
+        "comments": ["argumentking", "contrarymary", "demo_debater", "voiceofreason"],
+    },
+    {
+        "title": "Restaurants should ban split bills for large groups",
+        "description": "Is simplicity for staff worth the inconvenience for diners?",
+        "category": "food",
+        "author": "contrarymary",
+        "duration_hours": 60,
+        "agree": ["argumentking", "contrarymary", "logicqueen"],
+        "disagree": ["consensusbuilder", "demo_debater", "mindchanger", "voiceofreason", "perspectiveseeker"],
+        "comments": ["contrarymary", "consensusbuilder", "mindchanger", "perspectiveseeker"],
+    },
+    {
+        "title": "Pet owners should need a licence for high-maintenance animals",
+        "description": "Would licensing improve welfare without unfairly punishing responsible owners?",
+        "category": "animals",
+        "author": "demo_debater",
+        "duration_hours": 72,
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason"],
+        "disagree": ["argumentking", "contrarymary", "mindchanger", "perspectiveseeker"],
+        "comments": ["demo_debater", "logicqueen", "contrarymary", "voiceofreason"],
+    },
+    {
+        "title": "Open-source AI models are safer than closed models",
+        "description": "Does transparency help safety more than it helps misuse?",
+        "category": "technology",
+        "author": "logicqueen",
+        "expired_days_ago": 1,
+        "winner": "disagree",
+        "agree": ["argumentking", "contrarymary", "mindchanger"],
+        "disagree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason", "perspectiveseeker"],
+        "comments": ["logicqueen", "argumentking", "consensusbuilder", "perspectiveseeker"],
+    },
+    {
+        "title": "Compulsory voting improves democracy",
+        "description": "Does requiring everyone to vote create better representation?",
+        "category": "politics",
+        "author": "voiceofreason",
+        "expired_days_ago": 3,
+        "winner": "agree",
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason", "perspectiveseeker"],
+        "disagree": ["argumentking", "contrarymary", "mindchanger"],
+        "comments": ["voiceofreason", "contrarymary", "demo_debater", "logicqueen"],
+    },
+    {
+        "title": "Kids should learn coding before high school",
+        "description": "Should programming become a core early-years literacy?",
+        "category": "education",
+        "author": "consensusbuilder",
+        "expired_days_ago": 4,
+        "winner": "agree",
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "mindchanger", "voiceofreason"],
+        "disagree": ["argumentking", "contrarymary", "perspectiveseeker"],
+        "comments": ["consensusbuilder", "mindchanger", "argumentking", "voiceofreason"],
+    },
+    {
+        "title": "Reality TV has cultural value",
+        "description": "Can reality television teach us something meaningful about society?",
+        "category": "entertainment",
+        "author": "mindchanger",
+        "expired_days_ago": 6,
+        "winner": "disagree",
+        "agree": ["argumentking", "mindchanger", "perspectiveseeker"],
+        "disagree": ["consensusbuilder", "contrarymary", "demo_debater", "logicqueen", "voiceofreason"],
+        "comments": ["mindchanger", "perspectiveseeker", "contrarymary", "demo_debater"],
+    },
+    {
+        "title": "Professional athletes are overpaid",
+        "description": "Are elite sports salaries justified by revenue and scarcity?",
+        "category": "sports",
+        "author": "argumentking",
+        "expired_days_ago": 8,
+        "winner": "disagree",
+        "agree": ["contrarymary", "mindchanger"],
+        "disagree": ["argumentking", "consensusbuilder", "demo_debater", "logicqueen", "voiceofreason", "perspectiveseeker"],
+        "comments": ["argumentking", "voiceofreason", "contrarymary", "consensusbuilder"],
+    },
+    {
+        "title": "Meal kits are worth the premium",
+        "description": "Do convenience and reduced waste justify higher per-meal costs?",
+        "category": "food",
+        "author": "perspectiveseeker",
+        "expired_days_ago": 10,
+        "winner": "agree",
+        "agree": ["consensusbuilder", "demo_debater", "mindchanger", "perspectiveseeker", "voiceofreason"],
+        "disagree": ["argumentking", "contrarymary", "logicqueen"],
+        "comments": ["perspectiveseeker", "logicqueen", "mindchanger", "argumentking"],
+    },
+    {
+        "title": "Office pets improve workplace culture",
+        "description": "Are animals at work a morale boost or a distraction and access problem?",
+        "category": "animals",
+        "author": "demo_debater",
+        "expired_days_ago": 12,
+        "winner": "agree",
+        "agree": ["consensusbuilder", "demo_debater", "mindchanger", "voiceofreason"],
+        "disagree": ["argumentking", "contrarymary", "logicqueen", "perspectiveseeker"],
+        "comments": ["demo_debater", "contrarymary", "voiceofreason", "consensusbuilder"],
+    },
+    {
+        "title": "Personal carbon budgets are fairer than carbon taxes",
+        "description": "Would individual allowances target emissions more justly than broad price signals?",
+        "category": "environment",
+        "author": "logicqueen",
+        "expired_days_ago": 14,
+        "winner": "agree",
+        "agree": ["consensusbuilder", "demo_debater", "logicqueen", "voiceofreason"],
+        "disagree": ["argumentking", "contrarymary", "mindchanger", "perspectiveseeker"],
+        "comments": ["logicqueen", "perspectiveseeker", "argumentking", "voiceofreason"],
+    },
+]
+
+
+DEMO_COMMENT_LINES = {
+    "argumentking": "The headline sounds tidy, but the trade-offs underneath it are doing all the work.",
+    "consensusbuilder": "Most people will land on this once the practical details are separated from the slogan.",
+    "contrarymary": "The popular answer misses the incentives. People behave differently when the policy is real.",
+    "demo_debater": "I can see both sides, but the strongest argument is the one with fewer hidden costs.",
+    "logicqueen": "The evidence points one way, but only if we define the outcome we actually care about.",
+    "mindchanger": "I started on the other side of this, but the better examples nudged me across.",
+    "perspectiveseeker": "The edge cases are doing more work here than the average case.",
+    "voiceofreason": "This probably needs a middle path rather than a clean yes or no.",
+}
 
 
 def get_or_create_demo_user():
@@ -155,6 +419,14 @@ def get_or_create_social_user(user_data):
     return user
 
 
+def get_seed_users():
+    users = {DEMO_USER["username"]: get_or_create_demo_user()}
+    for user_data in DEMO_SOCIAL_USERS:
+        users[user_data["username"]] = get_or_create_social_user(user_data)
+    db.session.flush()
+    return users
+
+
 def ensure_follow(follower, followed):
     if follower.id == followed.id:
         return False
@@ -165,36 +437,37 @@ def ensure_follow(follower, followed):
 
 
 def seed_social_graph():
-    demo_user = get_or_create_demo_user()
-    users_by_username = {}
-
-    for user_data in DEMO_SOCIAL_USERS:
-        user = get_or_create_social_user(user_data)
-        users_by_username[user.username] = user
-
-    db.session.flush()
+    users_by_username = get_seed_users()
+    demo_user = users_by_username[DEMO_USER["username"]]
 
     created_links = 0
 
     for username in DEMO_FOLLOWING:
-        created_links += int(ensure_follow(demo_user, users_by_username[username]))
+        if username in users_by_username:
+            created_links += int(ensure_follow(demo_user, users_by_username[username]))
 
     for username in DEMO_FOLLOWERS:
-        created_links += int(ensure_follow(users_by_username[username], demo_user))
+        if username in users_by_username:
+            created_links += int(ensure_follow(users_by_username[username], demo_user))
 
     db.session.commit()
-    print(f"Social seed complete: {len(users_by_username)} demo users ready, {created_links} follow links created.")
+    print(f"Social seed complete: {len(users_by_username) - 1} demo users ready, {created_links} follow links created.")
 
 
 def seed_debates():
-    demo_user = get_or_create_demo_user()
+    users = get_seed_users()
     now = datetime.now(timezone.utc)
     created = 0
     skipped = 0
+    reassigned = 0
 
     for item in DEMO_DEBATES:
+        author = users.get(item.get("author"), users[DEMO_USER["username"]])
         existing = Debate.query.filter_by(title=item["title"]).first()
         if existing:
+            if existing.user_id != author.id:
+                existing.user_id = author.id
+                reassigned += 1
             skipped += 1
             continue
 
@@ -220,13 +493,13 @@ def seed_debates():
             disagree_votes=item["disagree_votes"],
             winner=item.get("winner"),
             is_closed=item.get("is_closed", False),
-            user_id=demo_user.id,
+            user_id=author.id,
         )
         db.session.add(debate)
         created += 1
 
     db.session.commit()
-    print(f"Seed complete: {created} debates created, {skipped} already existed.")
+    print(f"Seed complete: {created} debates created, {skipped} already existed, {reassigned} reassigned.")
 
 
 DEMO_COMMENTS = [
@@ -368,9 +641,7 @@ DEMO_COMMENTS = [
 
 
 def seed_comments():
-    social_users = {u["username"]: User.query.filter_by(username=u["username"]).first()
-                    for u in DEMO_SOCIAL_USERS}
-    social_users[DEMO_USER["username"]] = get_or_create_demo_user()
+    social_users = get_seed_users()
 
     created_comments = 0
     created_votes = 0
@@ -400,6 +671,12 @@ def seed_comments():
         db.session.add(vote)
         created_votes += 1
 
+    def stance_for(user, debate):
+        vote = Vote.query.filter_by(user_id=user.id, debate_id=debate.id).first()
+        if not vote:
+            return "neutral"
+        return "blue" if vote.vote_type == "agree" else "red"
+
     def ensure_comment(item, debate, parent=None):
         nonlocal created_comments, skipped
         user = social_users.get(item["username"])
@@ -422,6 +699,7 @@ def seed_comments():
             user_id=user.id,
             debate_id=debate.id,
             content=item["content"],
+            stance=stance_for(user, debate),
             parent_comment_id=parent.id if parent else None,
         )
         db.session.add(comment)
@@ -476,9 +754,166 @@ def seed_comments():
     )
 
 
+def seed_leaderboard_activity():
+    users = get_seed_users()
+    now = datetime.now(timezone.utc)
+    created_debates = 0
+    created_votes = 0
+    created_comments = 0
+    created_likes = 0
+
+    def ensure_activity_vote(user, debate, vote_type):
+        nonlocal created_votes
+        if vote_type not in {"agree", "disagree"}:
+            return
+
+        existing_vote = Vote.query.filter_by(
+            user_id=user.id,
+            debate_id=debate.id,
+        ).first()
+        if existing_vote:
+            existing_vote.vote_type = vote_type
+            return
+
+        db.session.add(Vote(
+            user_id=user.id,
+            debate_id=debate.id,
+            vote_type=vote_type,
+        ))
+        created_votes += 1
+
+    def stance_for(user, debate):
+        vote = Vote.query.filter_by(user_id=user.id, debate_id=debate.id).first()
+        if not vote:
+            return "neutral"
+        return "blue" if vote.vote_type == "agree" else "red"
+
+    def ensure_activity_comment(username, debate):
+        nonlocal created_comments, created_likes
+        user = users.get(username)
+        if not user:
+            return
+
+        content = f"{DEMO_COMMENT_LINES[username]} ({debate.title})"
+        comment = Comment.query.filter_by(
+            user_id=user.id,
+            debate_id=debate.id,
+            content=content,
+            parent_comment_id=None,
+        ).first()
+
+        if not comment:
+            comment = Comment(
+                user_id=user.id,
+                debate_id=debate.id,
+                content=content,
+                stance=stance_for(user, debate),
+                parent_comment_id=None,
+            )
+            db.session.add(comment)
+            db.session.flush()
+            created_comments += 1
+        elif not comment.stance:
+            comment.stance = stance_for(user, debate)
+
+        liker_names = [
+            name for name in DEMO_LEADERBOARD_TARGETS
+            if name != username
+        ][:3]
+        for liker_name in liker_names:
+            liker = users.get(liker_name)
+            if not liker:
+                continue
+            existing_like = CommentLike.query.filter_by(
+                user_id=liker.id,
+                comment_id=comment.id,
+            ).first()
+            if existing_like:
+                continue
+            db.session.add(CommentLike(user_id=liker.id, comment_id=comment.id))
+            created_likes += 1
+
+    for item in DEMO_ACTIVITY_DEBATES:
+        author = users[item["author"]]
+        debate = Debate.query.filter_by(title=item["title"]).first()
+
+        if debate:
+            debate.user_id = author.id
+            debate.description = item["description"]
+            debate.category = item["category"]
+        else:
+            if "expired_days_ago" in item:
+                expires_at = now - timedelta(days=item["expired_days_ago"])
+            else:
+                expires_at = now + timedelta(hours=item.get("duration_hours", 24))
+
+            debate = Debate(
+                title=item["title"],
+                description=item["description"],
+                category=item["category"],
+                expires_at=expires_at,
+                user_id=author.id,
+                agree_votes=0,
+                disagree_votes=0,
+            )
+            db.session.add(debate)
+            db.session.flush()
+            created_debates += 1
+
+        if "expired_days_ago" in item:
+            debate.expires_at = now - timedelta(days=item["expired_days_ago"])
+            debate.is_closed = True
+            debate.winner = item["winner"]
+        else:
+            debate.expires_at = now + timedelta(hours=item.get("duration_hours", 24))
+            debate.is_closed = False
+            debate.winner = None
+
+        for username in item.get("agree", []):
+            ensure_activity_vote(users[username], debate, "agree")
+        for username in item.get("disagree", []):
+            ensure_activity_vote(users[username], debate, "disagree")
+
+        db.session.flush()
+        debate.agree_votes = Vote.query.filter_by(debate_id=debate.id, vote_type="agree").count()
+        debate.disagree_votes = Vote.query.filter_by(debate_id=debate.id, vote_type="disagree").count()
+
+        for username in item.get("comments", []):
+            ensure_activity_comment(username, debate)
+
+    db.session.commit()
+    print(
+        "Leaderboard activity seed complete: "
+        f"{created_debates} debates created, "
+        f"{created_votes} votes created, "
+        f"{created_comments} comments created, "
+        f"{created_likes} likes created."
+    )
+
+
+def seed_leaderboard_scores():
+    users = get_seed_users()
+
+    for username, targets in DEMO_LEADERBOARD_TARGETS.items():
+        user = users.get(username)
+        if not user:
+            continue
+
+        user.reputation_score = max(user.reputation_score or 0, targets["points"])
+        user.conformity_score = targets["conformity"]
+        user.debates_won = max(user.debates_won or 0, targets["won"])
+        user.debates_lost = max(user.debates_lost or 0, targets["lost"])
+
+    db.session.commit()
+    print(f"Leaderboard score seed complete: {len(DEMO_LEADERBOARD_TARGETS)} users balanced.")
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        seed_debates()
+        ensure_schema_compatibility()
         seed_social_graph()
+        seed_debates()
         seed_comments()
+        seed_leaderboard_activity()
+        seed_leaderboard_scores()

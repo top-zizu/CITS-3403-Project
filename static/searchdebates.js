@@ -5,11 +5,14 @@ let debates = [];
 let categories = [];
 const initialParams = new URLSearchParams(window.location.search);
 const initialTag = initialParams.get('tag') || initialParams.get('category') || '';
+const initialStatus = initialParams.get('status') === 'ended' ? 'closed' : initialParams.get('status');
 const activeFilters = new Set(initialTag ? [initialTag] : []);
 let searchQuery = initialParams.get('q') || '';
+let currentStatus = ['active', 'closed'].includes(initialStatus) ? initialStatus : '';
 let searchTimer = null;
 
 const filterTags = document.getElementById('filter-tags');
+const statusButtons = document.querySelectorAll('#status-filters [data-status]');
 const searchInput = document.getElementById('search-input');
 const debatesList = document.getElementById('debates-list');
 const emptyState = document.getElementById('empty-state');
@@ -43,6 +46,12 @@ function showLoginPopup(message) {
 function closeLoginPopup() {
   const popup = document.getElementById('login-popup');
   if (popup) popup.classList.add('hidden');
+}
+
+function renderStatusFilters() {
+  statusButtons.forEach(button => {
+    button.classList.toggle('active', (button.dataset.status || '') === currentStatus);
+  });
 }
 
 function renderFilterTags() {
@@ -100,6 +109,12 @@ function updateFilterUrl() {
     params.set('q', searchQuery);
   } else {
     params.delete('q');
+  }
+
+  if (currentStatus) {
+    params.set('status', currentStatus);
+  } else {
+    params.delete('status');
   }
 
   const queryString = params.toString();
@@ -324,6 +339,10 @@ async function loadDebates() {
     params.set('q', searchQuery);
   }
 
+  if (currentStatus) {
+    params.set('status', currentStatus);
+  }
+
   const response = await fetch(`/api/debates?${params.toString()}`);
 
   if (!response.ok) {
@@ -498,6 +517,20 @@ document.addEventListener('click', event => {
   }
 });
 
+statusButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    currentStatus = button.dataset.status || '';
+    renderStatusFilters();
+    updateFilterUrl();
+
+    loadDebates().catch(() => {
+      debatesList.innerHTML = '';
+      emptyState.textContent = 'Unable to load debates. Please try again.';
+      emptyState.style.display = 'block';
+    });
+  });
+});
+
 searchInput?.addEventListener('input', event => {
 
   searchQuery = event.target.value.trim();
@@ -519,6 +552,8 @@ searchInput?.addEventListener('input', event => {
 
   }, 250);
 });
+
+renderStatusFilters();
 
 loadDebates().catch(() => {
 

@@ -162,6 +162,7 @@ class Comment(db.Model):
 
     content = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(300), nullable=True)
+    stance = db.Column(db.String(20), nullable=False, default="neutral")
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

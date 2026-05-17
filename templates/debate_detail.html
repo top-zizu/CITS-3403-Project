@@ -175,7 +175,6 @@
   const IS_ACTIVE   = {{ 'true' if debate.is_active else 'false' }};
   const IS_REVEALED = {{ 'true' if vote_data.revealed else 'false' }};
   const CSRF_TOKEN  = document.querySelector('meta[name="csrf-token"]').content;
-  const CURRENT_USERNAME = {% if current_user.is_authenticated %}{{ current_user.username | tojson }}{% else %}null{% endif %};
 
   let activeCommentFilter = 'blue';
   let voted     = {{ 'true' if user_vote else 'false' }};
@@ -188,7 +187,7 @@
     {
       id: {{ c.id }},
       author: {{ c.author.username | tojson }},
-      stance: {{ comment_stances.get(c.user_id, 'neutral') | tojson }},
+      stance: {{ (c.stance or 'neutral') | tojson }},
       time: {{ c.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
       text: {{ c.content | tojson }},
       likes: {{ c.likes | length }},
@@ -198,7 +197,7 @@
         {
           id: {{ r.id }},
           author: {{ r.author.username | tojson }},
-          stance: {{ comment_stances.get(r.user_id, 'neutral') | tojson }},
+          stance: {{ (r.stance or 'neutral') | tojson }},
           time: {{ r.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
           text: {{ r.content | tojson }},
           likes: {{ r.likes | length }},
@@ -213,25 +212,11 @@
   let comments = JSON.parse(JSON.stringify(INITIAL_COMMENTS));
 
   function setStance(s, btn) {
-    activeCommentFilter = s;
+    const isAlreadySelected = activeCommentFilter === s;
+    activeCommentFilter = isAlreadySelected ? null : s;
     document.querySelectorAll('.stance-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
+    if (!isAlreadySelected) btn.classList.add('active');
     renderComments();
-  }
-
-  function stanceFromVote(side) {
-    return side === 'agree' ? 'blue' : side === 'disagree' ? 'red' : 'neutral';
-  }
-
-  function updateAuthoredCommentStances(newStance) {
-    if (!CURRENT_USERNAME) return;
-
-    comments.forEach(comment => {
-      if (comment.author === CURRENT_USERNAME) comment.stance = newStance;
-      (comment.replies || []).forEach(reply => {
-        if (reply.author === CURRENT_USERNAME) reply.stance = newStance;
-      });
-    });
   }
 
   function refreshVoteDisplay() {
@@ -267,7 +252,6 @@
 
         voted = false;
         votedSide = null;
-        updateAuthoredCommentStances('neutral');
         refreshVoteDisplay();
         renderComments();
         return;
@@ -281,7 +265,6 @@
       votedSide = side;
       if (side === 'agree') agree++;
       else disagree++;
-      updateAuthoredCommentStances(stanceFromVote(side));
       refreshVoteDisplay();
       renderComments();
     })
@@ -412,6 +395,8 @@
   }
 
   function compareByActiveFilter(a, b) {
+    if (!activeCommentFilter) return compareByLikes(a, b);
+
     const aMatches = a.stance === activeCommentFilter;
     const bMatches = b.stance === activeCommentFilter;
 

@@ -288,6 +288,51 @@ def test_api_trending_tags_counts_open_public_debates(client, app, sample_user):
     assert tags[0]["url"] == "/search?tag=politics"
 
 
+def test_api_leaderboard_returns_real_user_data(client, app, sample_user, sample_debate):
+    """Leaderboard rows come from database users and include the displayed fields."""
+    with app.app_context():
+        sample_user.reputation_score = 150
+        sample_user.conformity_score = 65
+        challenger = User(username="challenger", email="challenger@example.com")
+        challenger.set_password("password123")
+        challenger.reputation_score = 300
+        challenger.conformity_score = 25
+        db.session.add(challenger)
+        db.session.flush()
+
+        db.session.add(Vote(
+            user_id=challenger.id,
+            debate_id=sample_debate.id,
+            vote_type="agree",
+        ))
+        db.session.add(Comment(
+            user_id=challenger.id,
+            debate_id=sample_debate.id,
+            content="A leaderboard comment.",
+            stance="blue",
+        ))
+        db.session.add(Debate(
+            title="Leaderboard Debate",
+            description="A debate for leaderboard counts.",
+            category="general",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+            user_id=challenger.id,
+        ))
+        db.session.commit()
+
+    response = client.get("/api/leaderboard?sort=points")
+    assert response.status_code == 200
+    users = response.get_json()["users"]
+    assert users[0]["username"] == "challenger"
+    assert users[0]["points"] == 300
+    assert users[0]["meta"] == "1 vote - 1 comment"
+    assert users[0]["debates"] == 1
+    assert users[0]["badge"] == "Contrarian"
+    assert users[0]["conformity"] == 25
+    assert users[0]["profile_url"] == "/profile/challenger"
+    assert users[0]["color"]
+
+
 def test_api_me_requires_login(client):
     """The /api/me endpoint requires authentication."""
     response = client.get("/api/me")
@@ -319,3 +364,24 @@ def test_post_comment_logged_in(logged_in_client, sample_debate, app):
     with app.app_context():
         comment = Comment.query.filter_by(content="A test comment.").first()
         assert comment is not None
+
+
+def test_comment_stance_is_saved_when_posted(logged_in_client, sample_debate, app):
+    """A comment keeps the vote stance the user had when it was posted."""
+    logged_in_client.post(f"/debates/{sample_debate.id}/vote", data={"vote_type": "agree"})
+    first_response = logged_in_client.post(f"/debates/{sample_debate.id}/comments", data={
+        "content": "I agree with this.",
+    })
+    assert first_response.get_json()["stance"] == "blue"
+
+    logged_in_client.post(f"/debates/{sample_debate.id}/vote", data={"vote_type": "disagree"})
+    second_response = logged_in_client.post(f"/debates/{sample_debate.id}/comments", data={
+        "content": "I changed my mind.",
+    })
+    assert second_response.get_json()["stance"] == "red"
+
+    with app.app_context():
+        first_comment = Comment.query.filter_by(content="I agree with this.").first()
+        second_comment = Comment.query.filter_by(content="I changed my mind.").first()
+        assert first_comment.stance == "blue"
+        assert second_comment.stance == "red"
