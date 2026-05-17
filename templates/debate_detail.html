@@ -393,24 +393,42 @@
 
   /* ── Delete comment / reply — calls Flask AJAX ── */
   function deleteComment(id, isReply, parentId) {
-    if (!confirm('Delete this comment?')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-title">Delete comment?</div>
+        <div class="modal-body">This can't be undone.</div>
+        <div class="modal-actions">
+          <button class="modal-cancel-btn" id="modal-cancel">Cancel</button>
+          <button class="modal-delete-btn" id="modal-confirm">Delete</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
 
-    fetch(`/comments/${id}/delete`, {
-      method: 'DELETE',
-      headers: { 'X-CSRFToken': CSRF_TOKEN },
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) { alert(data.error); return; }
-      if (isReply) {
-        const parent = comments.find(c => c.id === parentId);
-        if (parent) parent.replies = parent.replies.filter(r => r.id !== id);
-      } else {
-        comments = comments.filter(c => c.id !== id);
-      }
-      renderComments();
-    })
-    .catch(() => alert('Something went wrong.'));
+    overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.querySelector('#modal-confirm').onclick = () => {
+      overlay.remove();
+      fetch(`/comments/${id}/delete`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { alert(data.error); return; }
+        if (isReply) {
+          const parent = comments.find(c => c.id === parentId);
+          if (parent) parent.replies = parent.replies.filter(r => r.id !== id);
+        } else {
+          comments = comments.filter(c => c.id !== id);
+        }
+        renderComments();
+      })
+      .catch(() => alert('Something went wrong.'));
+    };
   }
 
   function stanceLabel(s) {
