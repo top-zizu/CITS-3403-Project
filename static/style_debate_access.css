@@ -1,35 +1,87 @@
 .access-box {
-            max-width: 420px;
-            margin: 100px auto;
-            text-align: center;
-            padding: 2rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-    }
-
-.access-box input {
-    padding: 0.6rem 1rem;
-    font-size: 1.3rem;
-    letter-spacing: 0.3rem;
+    max-width: 420px;
+    margin: 100px auto;
+    padding: 2.5rem 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
     text-align: center;
-    width: 200px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    }
-
-.access-box button {
+  }
+  
+  .access-box h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  
+  .access-box p {
+    color: var(--muted);
+    font-size: 0.9125rem;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  
+  .access-box input {
+    padding: 0.65rem 1rem;
+    font-size: 1.3rem;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.35rem;
+    text-align: center;
+    width: 100%;
+    max-width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  
+  .access-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+  
+  .access-box button {
     display: block;
     margin: 0 auto;
-    padding: 0.5rem 2rem;
-    font-size: 1rem;
+    padding: 0.6rem 2.2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
     cursor: pointer;
-    }
-    
-.error { 
-    color: #c0392b; margin-bottom: 1rem; 
-    }
-
-.back-link { 
-    margin-top: 1.5rem; display: block; 
-    }
+    transition: opacity 0.15s, box-shadow 0.15s;
+  }
+  
+  .access-box button:hover {
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  }
+  
+  .error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  
+  .back-link {
+    display: block;
+    margin-top: 20px;
+    font-size: 0.875rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  
+  .back-link:hover {
+    color: var(--accent);
+  }

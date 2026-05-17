@@ -431,6 +431,30 @@ body.dark-mode .status-ended {
   color: #9ca3af;
 }
 
+body.dark-mode .follow-profile-btn {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .follow-profile-btn:hover {
+  background: #374151;
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+body.dark-mode .follow-profile-btn.following {
+  background: #1f2937;
+  border-color: #374151;
+  color: #9ca3af;
+}
+
+body.dark-mode .follow-profile-btn.following:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: #f87171;
+  color: #f87171;
+}
+
 /*-------------Create Debate---------------*/
 body.dark-mode .card {
     background: #111827;
@@ -916,4 +940,40 @@ body.dark-mode .comment-time {
   color: #9ca3af;
 }
 
-  
+/*-------------Debate Access---------------*/
+body.dark-mode .access-box {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+body.dark-mode .access-box h2,
+body.dark-mode .access-box p {
+  color: #e5e7eb;
+}
+
+body.dark-mode .access-box p {
+  color: #9ca3af;
+}
+
+body.dark-mode .access-box input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+body.dark-mode .access-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+body.dark-mode .access-box input::placeholder {
+  color: #6b7280;
+}
+
+body.dark-mode .back-link {
+  color: #9ca3af;
+}
+
+body.dark-mode .back-link:hover {
+  color: #60a5fa;
+} 
