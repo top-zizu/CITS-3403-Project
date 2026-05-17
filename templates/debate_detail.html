@@ -70,6 +70,13 @@
 
     <h1 class="debate-title">{{ debate.title }}</h1>
 
+    {% if debate.is_private and current_user.is_authenticated and current_user.id == debate.user_id %}
+    <div style="margin: 10px 0 16px; padding: 12px 16px; background: var(--accent-lt); border: 1px solid var(--accent); border-radius: 10px; font-size: .9rem;">
+      🔒 This is a private debate. Share this access code with others:
+      <strong style="font-size: 1rem; letter-spacing: 2px; margin-left: 8px;">{{ debate.access_code }}</strong>
+    </div>
+    {% endif %}
+
     {% if debate.description and debate.description != debate.title %}
       <p class="debate-description" style="margin: 8px 0 12px; color: var(--muted); font-size: .95rem;">
         {{ debate.description }}
