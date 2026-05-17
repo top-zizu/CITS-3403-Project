@@ -368,7 +368,16 @@ def like_comment(comment_id):
 
     return jsonify({'success': True, 'like_count': len(comment.likes)})
 
-
+@debates_bp.route('/comments/<int:comment_id>/delete', methods=['DELETE'])
+@login_required
+def delete_comment(comment_id):
+    comment = db.get_or_404(Comment, comment_id)
+    if comment.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    db.session.delete(comment)
+    db.session.commit()
+    return jsonify({'success': True})
+    
 # ============================================================
 # PRIVATE DEBATE ACCESS
 # ============================================================

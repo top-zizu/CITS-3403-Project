@@ -175,6 +175,8 @@
   const IS_ACTIVE   = {{ 'true' if debate.is_active else 'false' }};
   const IS_REVEALED = {{ 'true' if vote_data.revealed else 'false' }};
   const CSRF_TOKEN  = document.querySelector('meta[name="csrf-token"]').content;
+  const CURRENT_USER = {{ current_user.username | tojson if current_user.is_authenticated else 'null' }};
+  const IS_ADMIN     = {{ 'true' if current_user.is_authenticated and current_user.is_admin else 'false' }};
 
   let activeCommentFilter = 'blue';
   let voted     = {{ 'true' if user_vote else 'false' }};
@@ -187,6 +189,7 @@
     {
       id: {{ c.id }},
       author: {{ c.author.username | tojson }},
+      isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == c.user_id else 'false' }},
       stance: {{ (c.stance or 'neutral') | tojson }},
       time: {{ c.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
       text: {{ c.content | tojson }},
@@ -197,6 +200,7 @@
         {
           id: {{ r.id }},
           author: {{ r.author.username | tojson }},
+          isOwner: {{ 'true' if current_user.is_authenticated and current_user.id == r.user_id else 'false' }},
           stance: {{ (r.stance or 'neutral') | tojson }},
           time: {{ r.created_at.strftime('%d %b %Y, %H:%M') | tojson }},
           text: {{ r.content | tojson }},
@@ -312,6 +316,7 @@
       comments.unshift({
         id: data.comment_id,
         author: data.username,
+        isOwner: true,
         stance: data.stance,
         time: data.created_at,
         text: data.content,
@@ -346,6 +351,7 @@
         parent.replies.push({
           id: data.comment_id,
           author: data.username,
+          isOwner: true,
           stance: data.stance,
           time: data.created_at,
           text: data.content,
@@ -383,6 +389,46 @@
       headers: { 'X-CSRFToken': CSRF_TOKEN },
     }).catch(() => {});
     renderComments();
+  }
+
+  /* ── Delete comment / reply — calls Flask AJAX ── */
+  function deleteComment(id, isReply, parentId) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-title">Delete comment?</div>
+        <div class="modal-body">This can't be undone.</div>
+        <div class="modal-actions">
+          <button class="modal-cancel-btn" id="modal-cancel">Cancel</button>
+          <button class="modal-delete-btn" id="modal-confirm">Delete</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.querySelector('#modal-confirm').onclick = () => {
+      overlay.remove();
+      fetch(`/comments/${id}/delete`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { alert(data.error); return; }
+        if (isReply) {
+          const parent = comments.find(c => c.id === parentId);
+          if (parent) parent.replies = parent.replies.filter(r => r.id !== id);
+        } else {
+          comments = comments.filter(c => c.id !== id);
+        }
+        renderComments();
+      })
+      .catch(() => alert('Something went wrong.'));
+    };
   }
 
   function stanceLabel(s) {
@@ -439,6 +485,17 @@
               </svg>
               ${c.likes}
             </button>
+            ${(c.isOwner || IS_ADMIN) ? `
+            <button class="delete-btn" title="Delete comment"
+                    onclick="deleteComment(${c.id}, ${isReply}, ${parentId})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>` : ''}
           </span>
         </div>
         <div class="comment-body">${c.text}</div>
