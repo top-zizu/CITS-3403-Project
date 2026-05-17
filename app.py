@@ -742,7 +742,7 @@ def api_notifications():
             "message": n.message,
             "is_read": n.is_read,
             "link_url": n.link_url,
-            "created_at": n.created_at.strftime("%d %b %Y, %H:%M"),
+            "created_at": n.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         } for n in user_notifications]
     })
 
