@@ -329,7 +329,7 @@ def test_api_leaderboard_returns_real_user_data(client, app, sample_user, sample
     assert users[0]["debates"] == 1
     assert users[0]["badge"] == "Contrarian"
     assert users[0]["conformity"] == 25
-    assert users[0]["profile_url"] == "/profile/challenger"
+    assert users[0]["profile_url"] == "/user/challenger"
     assert users[0]["color"]
 
 

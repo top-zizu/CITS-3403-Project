@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let expandedIndex = null;
 
   function timeAgo(dateString) {
-    const date = new Date(dateString.replace(",", ""));
+    const date = new Date(dateString);
     const now = new Date();
     const diff = Math.floor((now - date) / 1000);
     if (diff < 60) return "Just now";
